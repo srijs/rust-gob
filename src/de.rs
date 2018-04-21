@@ -31,32 +31,24 @@ impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
         where V: Visitor<'de>
     {
         let type_id = self.msg.read_int()?;
-        match type_id {
-            1 => {
-                match self.msg.read_int()? {
-                    0 => visitor.visit_bool(self.msg.read_bool()?),
-                    x => Err(serde::de::Error::custom(format!("unknown value tag {}", x)))
-                }
-            },
-            2 => {
-                match self.msg.read_int()? {
-                    0 => visitor.visit_i64(self.msg.read_int()?),
-                    x => Err(serde::de::Error::custom(format!("unknown value tag {}", x)))
-                }
-            },
-            3 => {
-                match self.msg.read_int()? {
-                    0 => visitor.visit_u64(self.msg.read_uint()?),
-                    x => Err(serde::de::Error::custom(format!("unknown value tag {}", x)))
-                }
-            },
-            4 => {
-                match self.msg.read_int()? {
-                    0 => visitor.visit_f64(self.msg.read_float()?),
-                    x => Err(serde::de::Error::custom(format!("unknown value tag {}", x)))
-                }
-            },
-            _ => Err(serde::de::Error::custom(format!("unknown type id {}", type_id)))
+        let type_tag = self.msg.read_int()?;
+        if type_tag == 0 {
+            match type_id {
+                1 => visitor.visit_bool(self.msg.read_bool()?),
+                2 => visitor.visit_i64(self.msg.read_int()?),
+                3 => visitor.visit_u64(self.msg.read_uint()?),
+                4 => visitor.visit_f64(self.msg.read_float()?),
+                5 => visitor.visit_bytes(self.msg.read_bytes()?),
+                6 => {
+                    let bytes = self.msg.read_bytes()?;
+                    let string = ::std::str::from_utf8(bytes)
+                        .map_err(|err| <Error as serde::de::Error>::custom(err))?;
+                    visitor.visit_str(string)
+                },
+                _ => Err(serde::de::Error::custom(format!("unknown type id {}", type_id)))
+            }
+        } else {
+            Err(serde::de::Error::custom(format!("unknown type tag {}", type_tag)))
         }
     }
 
@@ -69,7 +61,9 @@ impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
 
 #[cfg(test)]
 mod tests {
+    extern crate serde_bytes;
     use serde::Deserialize;
+    use self::serde_bytes::ByteBuf;
     use super::Deserializer;
 
     #[test]
@@ -161,5 +155,33 @@ mod tests {
         let deserializer = Deserializer::from_slice(&[8, 0, 254, 69, 192]);
         let decoded = f64::deserialize(deserializer).unwrap();
         assert_eq!(decoded, -42f64);
+    }
+
+    #[test]
+    fn bytebuf_empty() {
+        let deserializer = Deserializer::from_slice(&[10, 0, 0]);
+        let decoded = ByteBuf::deserialize(deserializer).unwrap();
+        assert_eq!(&*decoded, &[]);
+    }
+
+    #[test]
+    fn bytebuf_non_empty() {
+        let deserializer = Deserializer::from_slice(&[10, 0, 4, 1, 2, 3, 4]);
+        let decoded = ByteBuf::deserialize(deserializer).unwrap();
+        assert_eq!(&*decoded, &[1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn string_empty() {
+        let deserializer = Deserializer::from_slice(&[12, 0, 0]);
+        let decoded = String::deserialize(deserializer).unwrap();
+        assert_eq!(decoded, "");
+    }
+
+    #[test]
+    fn string_non_empty() {
+        let deserializer = Deserializer::from_slice(&[12, 0, 3, 102, 111, 111]);
+        let decoded = String::deserialize(deserializer).unwrap();
+        assert_eq!(decoded, "foo");
     }
 }

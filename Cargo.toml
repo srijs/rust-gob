@@ -6,3 +6,6 @@ authors = ["Sam Rijs <srijs@airpost.net>"]
 [dependencies]
 bytes = "0.4.6"
 serde = "1.0.39"
+
+[dev-dependencies]
+serde_bytes = "0.10.4"

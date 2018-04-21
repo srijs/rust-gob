@@ -7,30 +7,30 @@ pub(crate) enum Error {
 }
 
 pub(crate) struct Message<B> {
-    bytes: B
+    buf: B
 }
 
 impl<B> Message<B> {
-    pub fn new(bytes: B) -> Message<B> {
-        Message { bytes }
+    pub fn new(buf: B) -> Message<B> {
+        Message { buf }
     }
 }
 
 impl<B: Buf> Message<B> {
     #[inline]
     pub fn read_uint(&mut self) -> Result<u64, Error> {
-        if self.bytes.remaining() < 1 {
+        if self.buf.remaining() < 1 {
             return Err(Error::IncompleteMessage);
         }
-        let u7_or_len = self.bytes.get_u8();
+        let u7_or_len = self.buf.get_u8();
         if u7_or_len < 128 {
             return Ok(u7_or_len as u64);
         }
         let len = !u7_or_len;
-        if self.bytes.remaining() < len as usize {
+        if self.buf.remaining() < len as usize {
             return Err(Error::IncompleteMessage);
         }
-        Ok(self.bytes.get_uint::<BigEndian>(len as usize + 1))
+        Ok(self.buf.get_uint::<BigEndian>(len as usize + 1))
     }
 
     #[inline]
@@ -56,5 +56,14 @@ impl<B: Buf> Message<B> {
             1 => Ok(true),
             _ => Err(Error::IntegerOverflow)
         }
+    }
+
+    #[inline]
+    pub fn read_bytes(&mut self) -> Result<&[u8], Error> {
+        let len = self.read_uint()?;
+        if (self.buf.remaining() as u64) < len {
+            return Err(Error::IncompleteMessage);
+        }
+        Ok(&self.buf.bytes()[..len as usize])
     }
 }
