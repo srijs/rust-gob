@@ -1,4 +1,4 @@
-use bytes::{BigEndian, Buf, BufMut};
+use bytes::{BigEndian, Buf};
 
 #[derive(Debug)]
 pub(crate) enum Error {

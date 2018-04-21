@@ -44,6 +44,18 @@ impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
                     x => Err(serde::de::Error::custom(format!("unknown value tag {}", x)))
                 }
             },
+            3 => {
+                match self.msg.read_int()? {
+                    0 => visitor.visit_u64(self.msg.read_uint()?),
+                    x => Err(serde::de::Error::custom(format!("unknown value tag {}", x)))
+                }
+            },
+            4 => {
+                match self.msg.read_int()? {
+                    0 => visitor.visit_f64(self.msg.read_float()?),
+                    x => Err(serde::de::Error::custom(format!("unknown value tag {}", x)))
+                }
+            },
             _ => Err(serde::de::Error::custom(format!("unknown type id {}", type_id)))
         }
     }
@@ -75,6 +87,34 @@ mod tests {
     }
 
     #[test]
+    fn u64_zero() {
+        let deserializer = Deserializer::from_slice(&[6, 0, 0]);
+        let decoded = u64::deserialize(deserializer).unwrap();
+        assert_eq!(decoded, 0);
+    }
+
+    #[test]
+    fn u64_small() {
+        let deserializer = Deserializer::from_slice(&[6, 0, 42]);
+        let decoded = u64::deserialize(deserializer).unwrap();
+        assert_eq!(decoded, 42);
+    }
+
+    #[test]
+    fn u64_big() {
+        let deserializer = Deserializer::from_slice(&[6, 0, 254, 4, 210]);
+        let decoded = u64::deserialize(deserializer).unwrap();
+        assert_eq!(decoded, 1234);
+    }
+
+    #[test]
+    fn i64_zero() {
+        let deserializer = Deserializer::from_slice(&[4, 0, 0]);
+        let decoded = i64::deserialize(deserializer).unwrap();
+        assert_eq!(decoded, 0);
+    }
+
+    #[test]
     fn i64_small_pos() {
         let deserializer = Deserializer::from_slice(&[4, 0, 84]);
         let decoded = i64::deserialize(deserializer).unwrap();
@@ -100,5 +140,26 @@ mod tests {
         let deserializer = Deserializer::from_slice(&[4, 0, 254, 9, 163]);
         let decoded = i64::deserialize(deserializer).unwrap();
         assert_eq!(decoded, -1234);
+    }
+
+    #[test]
+    fn f64_zero() {
+        let deserializer = Deserializer::from_slice(&[8, 0, 0]);
+        let decoded = f64::deserialize(deserializer).unwrap();
+        assert_eq!(decoded, 0f64);
+    }
+
+    #[test]
+    fn f64_pos() {
+        let deserializer = Deserializer::from_slice(&[8, 0, 254, 69, 64]);
+        let decoded = f64::deserialize(deserializer).unwrap();
+        assert_eq!(decoded, 42f64);
+    }
+
+    #[test]
+    fn f64_neg() {
+        let deserializer = Deserializer::from_slice(&[8, 0, 254, 69, 192]);
+        let decoded = f64::deserialize(deserializer).unwrap();
+        assert_eq!(decoded, -42f64);
     }
 }
