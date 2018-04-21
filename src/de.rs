@@ -29,6 +29,12 @@ impl<'de> Deserializer<'de> {
         let bytes = &self.msg.get_ref().get_ref()[pos..pos+len];
         Ok(bytes)
     }
+
+    fn deserialize_str_slice(&mut self) -> Result<&'de str, Error> {
+        let bytes = self.deserialize_byte_slice()?;
+        ::std::str::from_utf8(bytes)
+            .map_err(|err| serde::de::Error::custom(err))
+    }
 }
 
 impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
@@ -46,12 +52,7 @@ impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
                 3 => visitor.visit_u64(self.msg.read_uint()?),
                 4 => visitor.visit_f64(self.msg.read_float()?),
                 5 => visitor.visit_borrowed_bytes(self.deserialize_byte_slice()?),
-                6 => {
-                    let bytes = self.deserialize_byte_slice()?;
-                    let string = ::std::str::from_utf8(bytes)
-                        .map_err(|err| <Error as serde::de::Error>::custom(err))?;
-                    visitor.visit_borrowed_str(string)
-                },
+                6 => visitor.visit_borrowed_str(self.deserialize_str_slice()?),
                 _ => Err(serde::de::Error::custom(format!("unknown type id {}", type_id)))
             }
         } else {
