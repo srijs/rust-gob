@@ -1,0 +1,8 @@
+[package]
+name = "gob"
+version = "0.1.0"
+authors = ["Sam Rijs <srijs@airpost.net>"]
+
+[dependencies]
+bytes = "0.4.6"
+serde = "1.0.39"
