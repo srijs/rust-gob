@@ -4,7 +4,7 @@ extern crate serde_bytes;
 
 use gob::de::Deserializer;
 use serde::Deserialize;
-use serde_bytes::ByteBuf;
+use serde_bytes::{Bytes, ByteBuf};
 
 #[test]
 fn bool_true() {
@@ -98,6 +98,20 @@ fn f64_neg() {
 }
 
 #[test]
+fn bytes_empty() {
+    let deserializer = Deserializer::from_slice(&[10, 0, 0]);
+    let decoded = Bytes::deserialize(deserializer).unwrap();
+    assert_eq!(&*decoded, &[]);
+}
+
+#[test]
+fn bytes_non_empty() {
+    let deserializer = Deserializer::from_slice(&[10, 0, 4, 1, 2, 3, 4]);
+    let decoded = Bytes::deserialize(deserializer).unwrap();
+    assert_eq!(&*decoded, &[1, 2, 3, 4]);
+}
+
+#[test]
 fn bytebuf_empty() {
     let deserializer = Deserializer::from_slice(&[10, 0, 0]);
     let decoded = ByteBuf::deserialize(deserializer).unwrap();
@@ -109,6 +123,20 @@ fn bytebuf_non_empty() {
     let deserializer = Deserializer::from_slice(&[10, 0, 4, 1, 2, 3, 4]);
     let decoded = ByteBuf::deserialize(deserializer).unwrap();
     assert_eq!(&*decoded, &[1, 2, 3, 4]);
+}
+
+#[test]
+fn str_empty() {
+    let deserializer = Deserializer::from_slice(&[12, 0, 0]);
+    let decoded = <&str>::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, "");
+}
+
+#[test]
+fn str_non_empty() {
+    let deserializer = Deserializer::from_slice(&[12, 0, 3, 102, 111, 111]);
+    let decoded = <&str>::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, "foo");
 }
 
 #[test]

@@ -14,6 +14,10 @@ impl<B> Message<B> {
     pub fn new(buf: B) -> Message<B> {
         Message { buf }
     }
+
+    pub fn get_ref(&self) -> &B {
+        &self.buf
+    }
 }
 
 impl<B: Buf> Message<B> {
@@ -59,11 +63,11 @@ impl<B: Buf> Message<B> {
     }
 
     #[inline]
-    pub fn read_bytes(&mut self) -> Result<&[u8], Error> {
+    pub fn read_bytes_len(&mut self) -> Result<usize, Error> {
         let len = self.read_uint()?;
         if (self.buf.remaining() as u64) < len {
             return Err(Error::IncompleteMessage);
         }
-        Ok(&self.buf.bytes()[..len as usize])
+        Ok(len as usize)
     }
 }
