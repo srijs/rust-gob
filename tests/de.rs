@@ -21,6 +21,34 @@ fn bool_false() {
 }
 
 #[test]
+fn u8_zero() {
+    let deserializer = Deserializer::from_slice(&[6, 0, 0]);
+    let decoded = u8::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, 0);
+}
+
+#[test]
+fn u8_overflow() {
+    let deserializer = Deserializer::from_slice(&[6, 0, 254, 4, 210]);
+    let result = u8::deserialize(deserializer);
+    assert!(result.is_err());
+}
+
+#[test]
+fn u16_zero() {
+    let deserializer = Deserializer::from_slice(&[6, 0, 0]);
+    let decoded = u16::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, 0);
+}
+
+#[test]
+fn u32_zero() {
+    let deserializer = Deserializer::from_slice(&[6, 0, 0]);
+    let decoded = u32::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, 0);
+}
+
+#[test]
 fn u64_zero() {
     let deserializer = Deserializer::from_slice(&[6, 0, 0]);
     let decoded = u64::deserialize(deserializer).unwrap();
@@ -39,6 +67,34 @@ fn u64_big() {
     let deserializer = Deserializer::from_slice(&[6, 0, 254, 4, 210]);
     let decoded = u64::deserialize(deserializer).unwrap();
     assert_eq!(decoded, 1234);
+}
+
+#[test]
+fn i8_zero() {
+    let deserializer = Deserializer::from_slice(&[4, 0, 0]);
+    let decoded = i8::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, 0);
+}
+
+#[test]
+fn i8_overflow() {
+    let deserializer = Deserializer::from_slice(&[4, 0, 254, 4, 210]);
+    let result = i8::deserialize(deserializer);
+    assert!(result.is_err());
+}
+
+#[test]
+fn i16_zero() {
+    let deserializer = Deserializer::from_slice(&[4, 0, 0]);
+    let decoded = i16::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, 0);
+}
+
+#[test]
+fn i32_zero() {
+    let deserializer = Deserializer::from_slice(&[4, 0, 0]);
+    let decoded = i32::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, 0);
 }
 
 #[test]
@@ -74,6 +130,13 @@ fn i64_big_neg() {
     let deserializer = Deserializer::from_slice(&[4, 0, 254, 9, 163]);
     let decoded = i64::deserialize(deserializer).unwrap();
     assert_eq!(decoded, -1234);
+}
+
+#[test]
+fn f32_zero() {
+    let deserializer = Deserializer::from_slice(&[8, 0, 0]);
+    let decoded = f32::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, 0f32);
 }
 
 #[test]
