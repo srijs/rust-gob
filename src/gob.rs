@@ -40,10 +40,12 @@ impl<B: Buf> Message<B> {
     #[inline]
     pub fn read_int(&mut self) -> Result<i64, Error> {
         let bits = self.read_uint()?;
-        if bits & 1 == 0 {
-            Ok((bits >> 1) as i64)
+        let sign = bits & 1;
+        let sint = (bits >> 1) as i64;
+        if sign == 0 {
+            Ok(sint)
         } else {
-            Ok(-1 + -((bits >> 1) as i64))
+            Ok(!sint)
         }
     }
 
