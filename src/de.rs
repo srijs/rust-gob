@@ -43,6 +43,7 @@ impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
     fn deserialize_any<V>(mut self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
+        let _ = self.msg.read_bytes_len()?;
         let type_id = self.msg.read_int()?;
         let type_tag = self.msg.read_int()?;
         if type_tag == 0 {
