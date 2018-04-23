@@ -50,10 +50,8 @@ impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
                     return serde::de::Deserializer::deserialize_any(de, visitor);
                 }
 
-                let type_tag = self.msg.read_int()?;
-
-                if type_tag != 0 {
-                    return Err(serde::de::Error::custom(format!("unknown type tag {}", type_tag)));
+                if self.msg.read_uint()? != 0 {
+                    return Err(serde::de::Error::custom(format!("neither a singleton nor a struct value")));
                 }
 
                 let de = ValueDeserializer::new(TypeId(type_id), &defs, &mut self.msg);
