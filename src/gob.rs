@@ -18,6 +18,10 @@ impl<B> Message<B> {
     pub fn get_ref(&self) -> &B {
         &self.buf
     }
+
+    pub fn get_mut(&mut self) -> &mut B {
+        &mut self.buf
+    }
 }
 
 impl<B: Buf> Message<B> {

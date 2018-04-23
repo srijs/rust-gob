@@ -1,5 +1,6 @@
 use std::io::Cursor;
 
+use bytes::Buf;
 use serde;
 use serde::de::Visitor;
 use serde::de::value::Error;
@@ -26,6 +27,7 @@ impl<'t, 'de> ValueDeserializer<'t, 'de> {
     fn deserialize_byte_slice(&mut self) -> Result<&'de [u8], Error> {
         let len = self.msg.read_bytes_len()?;
         let pos = self.msg.get_ref().position() as usize;
+        self.msg.get_mut().advance(len);
         let bytes = &self.msg.get_ref().get_ref()[pos..pos+len];
         Ok(bytes)
     }
