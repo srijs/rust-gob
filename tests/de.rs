@@ -1,6 +1,7 @@
 extern crate gob;
 extern crate serde;
 extern crate serde_bytes;
+#[macro_use] extern crate serde_derive;
 
 use gob::de::Deserializer;
 use serde::Deserialize;
@@ -230,4 +231,25 @@ fn vec_of_bool_non_empty() {
         &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 2, 1, 0]);
     let decoded = <Vec<bool>>::deserialize(deserializer).unwrap();
     assert_eq!(decoded, &[true, false]);
+}
+
+#[test]
+fn point_struct() {
+    #[derive(Deserialize)]
+    struct Point {
+        #[serde(rename = "X")] x: i64,
+        #[serde(rename = "Y")] y: i64
+    }
+
+    let deserializer = Deserializer::from_slice(&[
+        0x1f, 0xff, 0x81, 0x03, 0x01, 0x01, 0x05, 0x50,
+        0x6f, 0x69, 0x6e, 0x74, 0x01, 0xff, 0x82, 0x00,
+        0x01, 0x02, 0x01, 0x01, 0x58, 0x01, 0x04, 0x00,
+        0x01, 0x01, 0x59, 0x01, 0x04, 0x00, 0x00, 0x00,
+        0x07, 0xff, 0x82, 0x01, 0x2c, 0x01, 0x42, 0x00
+    ]);
+
+    let decoded = Point::deserialize(deserializer).unwrap();
+    assert_eq!(decoded.x, 22);
+    assert_eq!(decoded.y, 33);
 }

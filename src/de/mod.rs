@@ -12,6 +12,7 @@ mod struct_deserializer;
 mod slice_deserializer;
 
 use self::value_deserializer::ValueDeserializer;
+use self::struct_deserializer::StructDeserializer;
 
 impl From<::gob::Error> for Error {
     fn from(err: ::gob::Error) -> Error {
@@ -44,14 +45,19 @@ impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
             let type_id = self.msg.read_int()?;
 
             if type_id >= 0 {
+                if let Some(&WireType::Struct(ref struct_type)) = defs.lookup(TypeId(type_id)) {
+                    let de = StructDeserializer::new(struct_type, &defs, &mut self.msg);
+                    return serde::de::Deserializer::deserialize_any(de, visitor);
+                }
+
                 let type_tag = self.msg.read_int()?;
 
-                if type_tag == 0 {
-                    let de = ValueDeserializer::new(TypeId(type_id), &defs, &mut self.msg);
-                    return serde::de::Deserializer::deserialize_any(de, visitor);
-                } else {
+                if type_tag != 0 {
                     return Err(serde::de::Error::custom(format!("unknown type tag {}", type_tag)));
                 }
+
+                let de = ValueDeserializer::new(TypeId(type_id), &defs, &mut self.msg);
+                return serde::de::Deserializer::deserialize_any(de, visitor);
             }
 
             let wire_type = {

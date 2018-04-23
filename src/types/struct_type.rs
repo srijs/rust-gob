@@ -1,3 +1,5 @@
+use serde::{Deserialize, Deserializer};
+
 use super::{CommonType, TypeId, WireType, SliceType};
 
 #[derive(Clone, Debug, Deserialize)]
@@ -20,7 +22,7 @@ impl StructType {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct Fields(pub Vec<FieldType>);
 
 impl Fields {
@@ -29,6 +31,12 @@ impl Fields {
             common: CommonType { name: "Fields".to_owned(), id: TypeId::FIELDS },
             elem: TypeId::FIELD_TYPE
         })
+    }
+}
+
+impl<'de> Deserialize<'de> for Fields {
+    fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
+        <Vec<FieldType>>::deserialize(de).map(Fields)
     }
 }
 
