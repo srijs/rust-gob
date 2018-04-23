@@ -7,8 +7,8 @@ use serde::de::value::Error;
 use ::gob::Message;
 use ::types::{TypeId, TypeDefs, WireType};
 
-use super::struct_map::StructMapAccess;
-use super::slice_seq::SliceSeqAccess;
+use super::struct_deserializer::StructDeserializer;
+use super::slice_deserializer::SliceDeserializer;
 
 pub(crate) struct ValueDeserializer<'t, 'de> where 'de: 't {
     type_id: TypeId,
@@ -54,12 +54,12 @@ impl<'t, 'de> serde::Deserializer<'de> for ValueDeserializer<'t, 'de> {
                 if let Some(wire_type) = self.defs.lookup(self.type_id) {
                     match wire_type {
                         &WireType::Struct(ref struct_type) => {
-                            let access = StructMapAccess::new(struct_type, self.defs, &mut self.msg);
-                            visitor.visit_map(access)
+                            let de = StructDeserializer::new(struct_type, self.defs, self.msg);
+                            de.deserialize_any(visitor)
                         },
                         &WireType::Slice(ref slice_type) => {
-                            let access = SliceSeqAccess::new(slice_type, self.defs, &mut self.msg)?;
-                            visitor.visit_seq(access)
+                            let de = SliceDeserializer::new(slice_type, self.defs, self.msg);
+                            de.deserialize_any(visitor)
                         }
                         _ => unimplemented!()
                     }

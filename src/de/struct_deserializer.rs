@@ -1,14 +1,14 @@
 use std::io::Cursor;
 
 use serde;
-use serde::de::{DeserializeSeed, IntoDeserializer, MapAccess};
+use serde::de::{Deserializer, DeserializeSeed, IntoDeserializer, MapAccess, Visitor};
 use serde::de::value::Error;
 
 use ::gob::Message;
 use ::types::{StructType, FieldType, TypeDefs};
 use super::ValueDeserializer;
 
-pub(crate) struct StructMapAccess<'t, 'de> where 'de: 't {
+struct StructMapAccess<'t, 'de> where 'de: 't {
     def: &'t StructType,
     defs: &'t TypeDefs,
     field_no: i64,
@@ -16,7 +16,7 @@ pub(crate) struct StructMapAccess<'t, 'de> where 'de: 't {
 }
 
 impl<'t, 'de> StructMapAccess<'t, 'de> {
-    pub fn new(def: &'t StructType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> StructMapAccess<'t, 'de> {
+    fn new(def: &'t StructType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> StructMapAccess<'t, 'de> {
         StructMapAccess {
             def, defs,
             field_no: -1,
@@ -59,5 +59,35 @@ impl<'f, 'de> MapAccess<'de> for StructMapAccess<'f, 'de> {
         let field = self.current_field()?;
         let de = ValueDeserializer::new(field.id, self.defs, &mut self.msg);
         seed.deserialize(de)
+    }
+}
+
+pub(crate) struct StructDeserializer<'t, 'de> where 'de: 't {
+    def: &'t StructType,
+    defs: &'t TypeDefs,
+    msg: &'t mut Message<Cursor<&'de [u8]>>
+}
+
+impl<'t, 'de> StructDeserializer<'t, 'de> {
+    #[inline]
+    pub(crate) fn new(def: &'t StructType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> StructDeserializer<'t, 'de> {
+        StructDeserializer { def, defs, msg }
+    }
+}
+
+impl<'t, 'de> Deserializer<'de> for StructDeserializer<'t, 'de> {
+    type Error = Error;
+
+    #[inline]
+    fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        visitor.visit_map(StructMapAccess::new(self.def, self.defs, self.msg))
+    }
+
+    forward_to_deserialize_any! {
+        bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 char str string bytes
+        byte_buf option unit unit_struct newtype_struct seq tuple
+        tuple_struct map struct enum identifier ignored_any
     }
 }

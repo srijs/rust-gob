@@ -7,11 +7,11 @@ use serde::de::value::Error;
 use ::gob::Message;
 use ::types::{TypeId, TypeDefs, WireType};
 
-mod value;
-use self::value::ValueDeserializer;
+mod value_deserializer;
+mod struct_deserializer;
+mod slice_deserializer;
 
-mod struct_map;
-mod slice_seq;
+use self::value_deserializer::ValueDeserializer;
 
 impl From<::gob::Error> for Error {
     fn from(err: ::gob::Error) -> Error {
