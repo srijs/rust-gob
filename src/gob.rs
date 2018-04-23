@@ -30,11 +30,11 @@ impl<B: Buf> Message<B> {
         if u7_or_len < 128 {
             return Ok(u7_or_len as u64);
         }
-        let len = !u7_or_len;
+        let len = !u7_or_len + 1;
         if self.buf.remaining() < len as usize {
             return Err(Error::IncompleteMessage);
         }
-        Ok(self.buf.get_uint::<BigEndian>(len as usize + 1))
+        Ok(self.buf.get_uint::<BigEndian>(len as usize))
     }
 
     #[inline]
