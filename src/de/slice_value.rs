@@ -35,6 +35,10 @@ impl<'f, 'de> SeqAccess<'de> for SliceSeqAccess<'f, 'de> {
         let de = FieldValueDeserializer::new(self.def.elem, self.defs, &mut self.msg);
         seed.deserialize(de).map(Some)
     }
+
+    fn size_hint(&self) -> Option<usize> {
+        Some(self.remaining_count as usize)
+    }
 }
 
 pub(crate) struct SliceValueDeserializer<'t, 'de> where 'de: 't {
