@@ -10,6 +10,7 @@ use ::types::{TypeId, TypeDefs, WireType};
 mod field_value;
 mod struct_value;
 mod slice_value;
+mod array_value;
 mod value;
 
 use self::field_value::FieldValueDeserializer;

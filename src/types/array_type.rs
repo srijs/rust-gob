@@ -5,7 +5,7 @@ pub struct ArrayType {
     pub common: CommonType,
     #[serde(rename = "Elem")]
     pub elem: TypeId,
-    #[serde(rename = "Len")]
+    #[serde(rename = "Len", default)]
     pub len: i64
 }
 

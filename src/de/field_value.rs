@@ -10,6 +10,7 @@ use ::types::{TypeId, TypeDefs, WireType};
 
 use super::struct_value::StructValueDeserializer;
 use super::slice_value::SliceValueDeserializer;
+use super::array_value::ArrayValueDeserializer;
 
 pub(crate) struct FieldValueDeserializer<'t, 'de> where 'de: 't {
     type_id: TypeId,
@@ -62,7 +63,11 @@ impl<'t, 'de> serde::Deserializer<'de> for FieldValueDeserializer<'t, 'de> {
                         &WireType::Slice(ref slice_type) => {
                             let de = SliceValueDeserializer::new(slice_type, self.defs, self.msg);
                             de.deserialize_any(visitor)
-                        }
+                        },
+                        &WireType::Array(ref array_type) => {
+                            let de = ArrayValueDeserializer::new(array_type, self.defs, self.msg);
+                            de.deserialize_any(visitor)
+                        },
                         _ => unimplemented!()
                     }
                 } else {

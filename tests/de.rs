@@ -218,7 +218,7 @@ fn string_non_empty() {
 }
 
 #[test]
-fn vec_of_bool_empty() {
+fn vec_of_bool_from_empty_slice() {
     let deserializer = Deserializer::from_slice(
         &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0]);
     let decoded = <Vec<bool>>::deserialize(deserializer).unwrap();
@@ -226,9 +226,25 @@ fn vec_of_bool_empty() {
 }
 
 #[test]
-fn vec_of_bool_non_empty() {
+fn vec_of_bool_from_empty_array() {
+    let deserializer = Deserializer::from_slice(
+        &[12, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0]);
+    let decoded = <Vec<bool>>::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, &[]);
+}
+
+#[test]
+fn vec_of_bool_from_non_empty_slice() {
     let deserializer = Deserializer::from_slice(
         &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 2, 1, 0]);
+    let decoded = <Vec<bool>>::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, &[true, false]);
+}
+
+#[test]
+fn vec_of_bool_from_non_empty_array() {
+    let deserializer = Deserializer::from_slice(
+        &[14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0]);
     let decoded = <Vec<bool>>::deserialize(deserializer).unwrap();
     assert_eq!(decoded, &[true, false]);
 }
