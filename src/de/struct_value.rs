@@ -6,7 +6,7 @@ use serde::de::value::Error;
 
 use ::gob::Message;
 use ::types::{StructType, FieldType, TypeDefs};
-use super::ValueDeserializer;
+use super::FieldValueDeserializer;
 
 struct StructMapAccess<'t, 'de> where 'de: 't {
     def: &'t StructType,
@@ -57,25 +57,25 @@ impl<'f, 'de> MapAccess<'de> for StructMapAccess<'f, 'de> {
         where V: DeserializeSeed<'de>
     {
         let field = self.current_field()?;
-        let de = ValueDeserializer::new(field.id, self.defs, &mut self.msg);
+        let de = FieldValueDeserializer::new(field.id, self.defs, &mut self.msg);
         seed.deserialize(de)
     }
 }
 
-pub(crate) struct StructDeserializer<'t, 'de> where 'de: 't {
+pub(crate) struct StructValueDeserializer<'t, 'de> where 'de: 't {
     def: &'t StructType,
     defs: &'t TypeDefs,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
-impl<'t, 'de> StructDeserializer<'t, 'de> {
+impl<'t, 'de> StructValueDeserializer<'t, 'de> {
     #[inline]
-    pub(crate) fn new(def: &'t StructType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> StructDeserializer<'t, 'de> {
-        StructDeserializer { def, defs, msg }
+    pub(crate) fn new(def: &'t StructType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> StructValueDeserializer<'t, 'de> {
+        StructValueDeserializer { def, defs, msg }
     }
 }
 
-impl<'t, 'de> Deserializer<'de> for StructDeserializer<'t, 'de> {
+impl<'t, 'de> Deserializer<'de> for StructValueDeserializer<'t, 'de> {
     type Error = Error;
 
     #[inline]

@@ -7,12 +7,13 @@ use serde::de::value::Error;
 use ::gob::Message;
 use ::types::{TypeId, TypeDefs, WireType};
 
-mod value_deserializer;
-mod struct_deserializer;
-mod slice_deserializer;
+mod field_value;
+mod struct_value;
+mod slice_value;
+mod value;
 
-use self::value_deserializer::ValueDeserializer;
-use self::struct_deserializer::StructDeserializer;
+use self::field_value::FieldValueDeserializer;
+use self::value::ValueDeserializer;
 
 impl From<::gob::Error> for Error {
     fn from(err: ::gob::Error) -> Error {
@@ -45,21 +46,12 @@ impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
             let type_id = self.msg.read_int()?;
 
             if type_id >= 0 {
-                if let Some(&WireType::Struct(ref struct_type)) = defs.lookup(TypeId(type_id)) {
-                    let de = StructDeserializer::new(struct_type, &defs, &mut self.msg);
-                    return serde::de::Deserializer::deserialize_any(de, visitor);
-                }
-
-                if self.msg.read_uint()? != 0 {
-                    return Err(serde::de::Error::custom(format!("neither a singleton nor a struct value")));
-                }
-
                 let de = ValueDeserializer::new(TypeId(type_id), &defs, &mut self.msg);
                 return serde::de::Deserializer::deserialize_any(de, visitor);
             }
 
             let wire_type = {
-                let de = ValueDeserializer::new(TypeId::WIRE_TYPE, &defs, &mut self.msg);
+                let de = FieldValueDeserializer::new(TypeId::WIRE_TYPE, &defs, &mut self.msg);
                 WireType::deserialize(de)
             }?;
 

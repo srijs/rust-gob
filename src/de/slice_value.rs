@@ -5,7 +5,7 @@ use serde::de::value::Error;
 
 use ::gob::Message;
 use ::types::{SliceType, TypeDefs};
-use super::ValueDeserializer;
+use super::FieldValueDeserializer;
 
 struct SliceSeqAccess<'t, 'de> where 'de: 't {
     def: &'t SliceType,
@@ -32,25 +32,25 @@ impl<'f, 'de> SeqAccess<'de> for SliceSeqAccess<'f, 'de> {
             return Ok(None);
         }
         self.remaining_count -= 1;
-        let de = ValueDeserializer::new(self.def.elem, self.defs, &mut self.msg);
+        let de = FieldValueDeserializer::new(self.def.elem, self.defs, &mut self.msg);
         seed.deserialize(de).map(Some)
     }
 }
 
-pub(crate) struct SliceDeserializer<'t, 'de> where 'de: 't {
+pub(crate) struct SliceValueDeserializer<'t, 'de> where 'de: 't {
     def: &'t SliceType,
     defs: &'t TypeDefs,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
-impl<'t, 'de> SliceDeserializer<'t, 'de> {
+impl<'t, 'de> SliceValueDeserializer<'t, 'de> {
     #[inline]
-    pub(crate) fn new(def: &'t SliceType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> SliceDeserializer<'t, 'de> {
-        SliceDeserializer { def, defs, msg }
+    pub(crate) fn new(def: &'t SliceType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> SliceValueDeserializer<'t, 'de> {
+        SliceValueDeserializer { def, defs, msg }
     }
 }
 
-impl<'t, 'de> Deserializer<'de> for SliceDeserializer<'t, 'de> {
+impl<'t, 'de> Deserializer<'de> for SliceValueDeserializer<'t, 'de> {
     type Error = Error;
 
     #[inline]
