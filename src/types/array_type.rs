@@ -1,4 +1,6 @@
-use super::{CommonType, TypeId, StructType, Fields, FieldType, WireType};
+use std::borrow::Cow;
+
+use super::{CommonType, TypeId, StructType, FieldType, WireType};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct ArrayType {
@@ -9,15 +11,13 @@ pub struct ArrayType {
     pub len: i64
 }
 
-impl ArrayType {
-    pub fn def() -> WireType {
-        WireType::Struct(StructType {
-            common: CommonType { name: "ArrayType".to_owned(), id: TypeId::ARRAY_TYPE },
-            fields: Fields(vec![
-                FieldType { name: "common".to_owned(), id: TypeId::COMMON_TYPE },
-                FieldType { name: "Elem".to_owned(), id: TypeId::INT },
-                FieldType { name: "Len".to_owned(), id: TypeId::INT }
-            ])
-        })
-    }
-}
+pub static ARRAY_TYPE_DEF: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("ArrayType"), id: TypeId::ARRAY_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("common"), id: TypeId::COMMON_TYPE },
+            FieldType { name: Cow::Borrowed("Elem"), id: TypeId::INT },
+            FieldType { name: Cow::Borrowed("Len"), id: TypeId::INT }
+        ])
+    })
+};

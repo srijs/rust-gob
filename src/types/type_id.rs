@@ -18,7 +18,7 @@ impl TypeId {
     pub const SLICE_TYPE: TypeId = TypeId(19);
     pub const STRUCT_TYPE: TypeId = TypeId(20);
     pub const FIELD_TYPE: TypeId = TypeId(21);
-    pub const FIELDS: TypeId = TypeId(22);
+    pub const FIELD_TYPE_SLICE: TypeId = TypeId(22);
     pub const MAP_TYPE: TypeId = TypeId(23);
 }
 

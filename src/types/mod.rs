@@ -13,7 +13,7 @@ mod slice_type;
 pub use self::slice_type::SliceType;
 
 mod struct_type;
-pub use self::struct_type::{FieldType, Fields, StructType};
+pub use self::struct_type::{FieldType, StructType};
 
 mod map_type;
 pub use self::map_type::MapType;
@@ -28,16 +28,7 @@ pub(crate) struct TypeDefs {
 
 impl TypeDefs {
     pub fn new() -> TypeDefs {
-        let mut defs = TypeDefs { map: HashMap::new() };
-        defs.insert(WireType::def());
-        defs.insert(CommonType::def());
-        defs.insert(ArrayType::def());
-        defs.insert(SliceType::def());
-        defs.insert(FieldType::def());
-        defs.insert(Fields::def());
-        defs.insert(StructType::def());
-        defs.insert(MapType::def());
-        defs
+        TypeDefs { map: HashMap::new() }
     }
 
     pub fn insert(&mut self, def: WireType) {
@@ -45,6 +36,16 @@ impl TypeDefs {
     }
 
     pub fn lookup(&self, id: TypeId) -> Option<&WireType> {
-        self.map.get(&id)
+        match id {
+            TypeId::ARRAY_TYPE => Some(&self::array_type::ARRAY_TYPE_DEF),
+            TypeId::MAP_TYPE => Some(&self::map_type::MAP_TYPE_DEF),
+            TypeId::SLICE_TYPE => Some(&self::slice_type::SLICE_TYPE_DEF),
+            TypeId::FIELD_TYPE => Some(&self::struct_type::FIELD_TYPE_DEF),
+            TypeId::FIELD_TYPE_SLICE => Some(&self::struct_type::FIELD_TYPE_SLICE_DEF),
+            TypeId::STRUCT_TYPE => Some(&self::struct_type::STRUCT_TYPE_DEF),
+            TypeId::WIRE_TYPE => Some(&self::wire_type::WIRE_TYPE_DEF),
+            TypeId::COMMON_TYPE => Some(&self::common_type::COMMON_TYPE_DEF),
+            _ => self.map.get(&id)
+        }
     }
 }

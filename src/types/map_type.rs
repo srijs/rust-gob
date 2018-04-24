@@ -1,4 +1,6 @@
-use super::{CommonType, TypeId, StructType, Fields, FieldType, WireType};
+use std::borrow::Cow;
+
+use super::{CommonType, TypeId, StructType, FieldType, WireType};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct MapType {
@@ -9,15 +11,13 @@ pub struct MapType {
     pub elem: TypeId
 }
 
-impl MapType {
-    pub fn def() -> WireType {
-        WireType::Struct(StructType {
-            common: CommonType { name: "MapType".to_owned(), id: TypeId::MAP_TYPE },
-            fields: Fields(vec![
-                FieldType { name: "common".to_owned(), id: TypeId::COMMON_TYPE },
-                FieldType { name: "Key".to_owned(), id: TypeId::INT },
-                FieldType { name: "Elem".to_owned(), id: TypeId::INT }
-            ])
-        })
-    }
-}
+pub static MAP_TYPE_DEF: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("MapType"), id: TypeId::MAP_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("common"), id: TypeId::COMMON_TYPE },
+            FieldType { name: Cow::Borrowed("Key"), id: TypeId::INT },
+            FieldType { name: Cow::Borrowed("Elem"), id: TypeId::INT }
+        ])
+    })
+};

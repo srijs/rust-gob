@@ -1,4 +1,6 @@
-use super::{CommonType, TypeId, StructType, Fields, FieldType, WireType};
+use std::borrow::Cow;
+
+use super::{CommonType, TypeId, StructType, FieldType, WireType};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct SliceType {
@@ -7,14 +9,12 @@ pub struct SliceType {
     pub elem: TypeId
 }
 
-impl SliceType {
-    pub fn def() -> WireType {
-        WireType::Struct(StructType {
-            common: CommonType { name: "SliceType".to_owned(), id: TypeId::SLICE_TYPE },
-            fields: Fields(vec![
-                FieldType { name: "common".to_owned(), id: TypeId::COMMON_TYPE },
-                FieldType { name: "Elem".to_owned(), id: TypeId::INT }
-            ])
-        })
-    }
-}
+pub static SLICE_TYPE_DEF: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("SliceType"), id: TypeId::SLICE_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("common"), id: TypeId::COMMON_TYPE },
+            FieldType { name: Cow::Borrowed("Elem"), id: TypeId::INT }
+        ])
+    })
+};

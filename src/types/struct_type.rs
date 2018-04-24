@@ -1,4 +1,4 @@
-use serde::{Deserialize, Deserializer};
+use std::borrow::Cow;
 
 use super::{CommonType, TypeId, WireType, SliceType};
 
@@ -7,57 +7,42 @@ pub struct StructType {
     pub common: CommonType,
     // the fields of the struct
     #[serde(rename = "Fields")]
-    pub fields: Fields
+    pub fields: Cow<'static, [FieldType]>
 }
 
-impl StructType {
-    pub fn def() -> WireType {
-        WireType::Struct(StructType {
-            common: CommonType { name: "StructType".to_owned(), id: TypeId::STRUCT_TYPE },
-            fields: Fields(vec![
-                FieldType { name: "common".to_owned(), id: TypeId::COMMON_TYPE },
-                FieldType { name: "Fields".to_owned(), id: TypeId::FIELDS }
-            ])
-        })
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Fields(pub Vec<FieldType>);
-
-impl Fields {
-    pub fn def() -> WireType {
-        WireType::Slice(SliceType {
-            common: CommonType { name: "Fields".to_owned(), id: TypeId::FIELDS },
-            elem: TypeId::FIELD_TYPE
-        })
-    }
-}
-
-impl<'de> Deserialize<'de> for Fields {
-    fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
-        <Vec<FieldType>>::deserialize(de).map(Fields)
-    }
-}
+pub static STRUCT_TYPE_DEF: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("StructType"), id: TypeId::STRUCT_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("common"), id: TypeId::COMMON_TYPE },
+            FieldType { name: Cow::Borrowed("Fields"), id: TypeId::FIELD_TYPE_SLICE }
+        ])
+    })
+};
 
 #[derive(Clone, Debug, Deserialize)]
 pub struct FieldType {
     // the name of the field
     #[serde(rename = "Name")]
-    pub name: String,
+    pub name: Cow<'static, str>,
     // the type id of the field, which must be already defined
     #[serde(rename = "Id")]
     pub id: TypeId
 }
 
-impl FieldType {
-    pub fn def() -> WireType {
-        WireType::Struct(StructType {
-            common: CommonType { name: "FieldType".to_owned(), id: TypeId::FIELD_TYPE },
-            fields: Fields(vec![
-                FieldType { name: "Name".to_owned(), id: TypeId::STRING },
-                FieldType { name: "Id".to_owned(), id: TypeId::INT }
-            ])
-        })
-    }
-}
+pub static FIELD_TYPE_DEF: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("FieldType"), id: TypeId::FIELD_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("Name"), id: TypeId::STRING },
+            FieldType { name: Cow::Borrowed("Id"), id: TypeId::INT }
+        ])
+    })
+};
+
+pub static FIELD_TYPE_SLICE_DEF: WireType = {
+    WireType::Slice(SliceType {
+        common: CommonType { name: Cow::Borrowed("Fields"), id: TypeId::FIELD_TYPE_SLICE },
+        elem: TypeId::FIELD_TYPE
+    })
+};

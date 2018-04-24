@@ -1,9 +1,10 @@
+use std::borrow::Cow;
 use std::fmt;
 
 use serde::{self, Deserialize, Deserializer};
 use serde::de::{Visitor, MapAccess};
 
-use super::{ArrayType, CommonType, SliceType, StructType, MapType, FieldType, Fields, TypeId};
+use super::{ArrayType, CommonType, SliceType, StructType, MapType, FieldType, TypeId};
 
 #[derive(Clone, Debug)]
 pub enum WireType {
@@ -13,19 +14,19 @@ pub enum WireType {
     Map(MapType)
 }
 
-impl WireType {
-    pub fn def() -> WireType {
-        WireType::Struct(StructType {
-            common: CommonType { name: "WireType".to_owned(), id: TypeId::WIRE_TYPE },
-            fields: Fields(vec![
-                FieldType { name: "ArrayT".to_owned(), id: TypeId::ARRAY_TYPE },
-                FieldType { name: "SliceT".to_owned(), id: TypeId::SLICE_TYPE },
-                FieldType { name: "StructT".to_owned(), id: TypeId::STRUCT_TYPE },
-                FieldType { name: "MapT".to_owned(), id: TypeId::MAP_TYPE },
-            ])
-        })
-    }
+pub static WIRE_TYPE_DEF: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("WireType"), id: TypeId::WIRE_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("ArrayT"), id: TypeId::ARRAY_TYPE },
+            FieldType { name: Cow::Borrowed("SliceT"), id: TypeId::SLICE_TYPE },
+            FieldType { name: Cow::Borrowed("StructT"), id: TypeId::STRUCT_TYPE },
+            FieldType { name: Cow::Borrowed("MapT"), id: TypeId::MAP_TYPE },
+        ])
+    })
+};
 
+impl WireType {
     pub fn common(&self) -> &CommonType {
         match self {
             &WireType::Array(ref inner) => &inner.common,

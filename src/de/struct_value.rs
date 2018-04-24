@@ -26,10 +26,10 @@ impl<'t, 'de> StructMapAccess<'t, 'de> {
 
     fn current_field(&self) -> Result<&'t FieldType, Error> {
         let field_no = self.field_no as usize;
-        if field_no >= self.def.fields.0.len() {
+        if field_no >= self.def.fields.len() {
             return Err(serde::de::Error::custom(format!("field number overflow ({}) on type {:?}", field_no, self.def)));
         }
-        Ok(&self.def.fields.0[field_no])
+        Ok(&self.def.fields[field_no])
     }
 }
 
