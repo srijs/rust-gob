@@ -3,6 +3,8 @@ extern crate serde;
 extern crate serde_bytes;
 #[macro_use] extern crate serde_derive;
 
+use std::collections::HashMap;
+
 use gob::de::Deserializer;
 use serde::Deserialize;
 use serde_bytes::{Bytes, ByteBuf};
@@ -247,6 +249,25 @@ fn vec_of_bool_from_non_empty_array() {
         &[14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0]);
     let decoded = <Vec<bool>>::deserialize(deserializer).unwrap();
     assert_eq!(decoded, &[true, false]);
+}
+
+#[test]
+fn map_empty() {
+    let deserializer = Deserializer::from_slice(
+        &[14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 4, 255, 130, 0, 0]);
+    let decoded = <HashMap<String, bool>>::deserialize(deserializer).unwrap();
+    assert_eq!(decoded.len(), 0);
+}
+
+#[test]
+fn map_non_empty() {
+    let deserializer = Deserializer::from_slice(
+        &[14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 14, 255, 130,
+          0, 2, 3, 102, 111, 111, 1, 3, 98, 97, 114, 0]);
+    let decoded = <HashMap<String, bool>>::deserialize(deserializer).unwrap();
+    assert_eq!(decoded.len(), 2);
+    assert_eq!(decoded["foo"], true);
+    assert_eq!(decoded["bar"], false);
 }
 
 #[test]
