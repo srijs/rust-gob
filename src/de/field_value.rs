@@ -12,6 +12,7 @@ use super::struct_value::StructValueDeserializer;
 use super::slice_value::SliceValueDeserializer;
 use super::array_value::ArrayValueDeserializer;
 use super::map_value::MapValueDeserializer;
+use super::complex_value::ComplexValueDeserializer;
 
 pub(crate) struct FieldValueDeserializer<'t, 'de> where 'de: 't {
     type_id: TypeId,
@@ -54,6 +55,9 @@ impl<'t, 'de> serde::Deserializer<'de> for FieldValueDeserializer<'t, 'de> {
             TypeId::FLOAT => visitor.visit_f64(self.msg.read_float()?),
             TypeId::BYTES => visitor.visit_borrowed_bytes(self.deserialize_byte_slice()?),
             TypeId::STRING => visitor.visit_borrowed_str(self.deserialize_str_slice()?),
+            TypeId::COMPLEX => {
+                ComplexValueDeserializer::new(self.msg).deserialize_any(visitor)
+            },
             _ => {
                 if let Some(wire_type) = self.defs.lookup(self.type_id) {
                     match wire_type {

@@ -271,6 +271,22 @@ fn map_non_empty() {
 }
 
 #[test]
+fn complex_64() {
+    let deserializer = Deserializer::from_slice(&[6, 14, 0, 254, 240, 63, 64]);
+    let decoded = <(f32, f32)>::deserialize(deserializer).unwrap();
+    assert_eq!(decoded.0, 1f32);
+    assert_eq!(decoded.1, 2f32);
+}
+
+#[test]
+fn complex_128() {
+    let deserializer = Deserializer::from_slice(&[6, 14, 0, 254, 240, 63, 64]);
+    let decoded = <(f64, f64)>::deserialize(deserializer).unwrap();
+    assert_eq!(decoded.0, 1f64);
+    assert_eq!(decoded.1, 2f64);
+}
+
+#[test]
 fn point_struct() {
     #[derive(Deserialize)]
     struct Point {
