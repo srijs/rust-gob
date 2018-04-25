@@ -5,7 +5,7 @@ extern crate serde_bytes;
 
 use std::collections::HashMap;
 
-use gob::de::Deserializer;
+use gob::Deserializer;
 use serde::Deserialize;
 use serde_bytes::{Bytes, ByteBuf};
 
