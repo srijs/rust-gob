@@ -73,6 +73,14 @@ fn u64_big() {
 }
 
 #[test]
+fn u64_max() {
+    let deserializer = Deserializer::from_slice(
+        &[11, 6, 0, 248, 255, 255, 255, 255, 255, 255, 255, 255]);
+    let decoded = u64::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, ::std::u64::MAX);
+}
+
+#[test]
 fn i8_zero() {
     let deserializer = Deserializer::from_slice(&[3, 4, 0, 0]);
     let decoded = i8::deserialize(deserializer).unwrap();
@@ -133,6 +141,22 @@ fn i64_big_neg() {
     let deserializer = Deserializer::from_slice(&[5, 4, 0, 254, 9, 163]);
     let decoded = i64::deserialize(deserializer).unwrap();
     assert_eq!(decoded, -1234);
+}
+
+#[test]
+fn i64_min() {
+    let deserializer = Deserializer::from_slice(
+        &[11, 4, 0, 248, 255, 255, 255, 255, 255, 255, 255, 255]);
+    let decoded = i64::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, ::std::i64::MIN);
+}
+
+#[test]
+fn i64_max() {
+    let deserializer = Deserializer::from_slice(
+        &[11, 4, 0, 248, 255, 255, 255, 255, 255, 255, 255, 254]);
+    let decoded = i64::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, ::std::i64::MAX);
 }
 
 #[test]
