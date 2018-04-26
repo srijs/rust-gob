@@ -85,7 +85,6 @@ impl<B: BufMut> Message<B> {
             self.buf.put_u8(n as u8);
         } else {
             let nbytes = 8 - (n.leading_zeros() / 8) as u8;
-            println!("packing {} into {} bytes", n, nbytes);
             self.buf.put_u8(!(nbytes - 1));
             self.buf.put_uint::<BigEndian>(n, nbytes as usize);
         }
