@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 mod wire_type;
 pub use self::wire_type::WireType;
@@ -23,12 +23,12 @@ pub use self::type_id::TypeId;
 
 #[derive(Debug)]
 pub(crate) struct TypeDefs {
-    map: HashMap<TypeId, WireType>
+    map: BTreeMap<TypeId, WireType>
 }
 
 impl TypeDefs {
     pub fn new() -> TypeDefs {
-        TypeDefs { map: HashMap::new() }
+        TypeDefs { map: BTreeMap::new() }
     }
 
     pub fn insert(&mut self, def: WireType) {
