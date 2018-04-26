@@ -1,7 +1,7 @@
 use std::io::Cursor;
 
 use bytes::Buf;
-use serde;
+use serde::{self, Deserialize};
 use serde::de::Visitor;
 use serde::de::value::Error;
 
@@ -85,8 +85,19 @@ impl<'t, 'de> serde::Deserializer<'de> for FieldValueDeserializer<'t, 'de> {
         }
     }
 
+    fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        let int = i64::deserialize(self)?;
+        if let Some(c) = ::std::char::from_u32(int as u32) {
+            visitor.visit_char(c)
+        } else {
+            Err(serde::de::Error::custom(format!("invalid char code {}", int)))
+        }
+    }
+
     forward_to_deserialize_any! {
-        bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 char str string bytes
+        bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 str string bytes
         byte_buf option unit unit_struct newtype_struct seq tuple
         tuple_struct map struct enum identifier ignored_any
     }

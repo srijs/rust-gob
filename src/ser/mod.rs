@@ -112,7 +112,7 @@ impl<W: Write> ser::Serializer for Serializer<W> {
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+        self.serialize_i64(v as i64)
     }
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
@@ -252,7 +252,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+        self.serialize_i64(v as i64)
     }
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {

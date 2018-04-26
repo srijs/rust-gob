@@ -188,6 +188,20 @@ fn f64_neg() {
 }
 
 #[test]
+fn char_ascii() {
+    let deserializer = Deserializer::from_slice(&[4, 4, 0, 255, 204]);
+    let decoded = char::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, 'f');
+}
+
+#[test]
+fn char_unicode() {
+    let deserializer = Deserializer::from_slice(&[6, 4, 0, 253, 1, 21, 60]);
+    let decoded = char::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, '語');
+}
+
+#[test]
 fn bytes_empty() {
     let deserializer = Deserializer::from_slice(&[3, 10, 0, 0]);
     let decoded = Bytes::deserialize(deserializer).unwrap();

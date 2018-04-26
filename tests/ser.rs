@@ -238,3 +238,23 @@ fn f64_neg() {
     }
     assert_eq!(buffer, &[5, 8, 0, 254, 69, 192]);
 }
+
+#[test]
+fn char_ascii() {
+    let mut buffer = Vec::new();
+    {
+        let serializer = Serializer::new(&mut buffer);
+        'f'.serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer, &[4, 4, 0, 255, 204]);
+}
+
+#[test]
+fn char_unicode() {
+    let mut buffer = Vec::new();
+    {
+        let serializer = Serializer::new(&mut buffer);
+        '語'.serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer, &[6, 4, 0, 253, 1, 21, 60]);
+}
