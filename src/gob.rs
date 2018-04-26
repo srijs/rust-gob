@@ -1,4 +1,4 @@
-use bytes::{BigEndian, Buf};
+use bytes::{BigEndian, Buf, BufMut};
 
 #[derive(Debug)]
 pub(crate) enum Error {
@@ -75,5 +75,39 @@ impl<B: Buf> Message<B> {
             return Err(Error::IncompleteMessage);
         }
         Ok(len as usize)
+    }
+}
+
+impl<B: BufMut> Message<B> {
+    #[inline]
+    pub fn write_uint(&mut self, n: u64) -> Result<(), Error> {
+        if n < 128 {
+            self.buf.put_u8(n as u8);
+        } else {
+            let nbytes = 8 - (n.leading_zeros() / 8) as u8;
+            println!("packing {} into {} bytes", n, nbytes);
+            self.buf.put_u8(!(nbytes - 1));
+            self.buf.put_uint::<BigEndian>(n, nbytes as usize);
+        }
+        Ok(())
+    }
+
+    #[inline]
+    pub fn write_bool(&mut self, b: bool) -> Result<(), Error> {
+        match b {
+            false => self.write_uint(0),
+            true => self.write_uint(1)
+        }
+    }
+
+    #[inline]
+    pub fn write_int(&mut self, n: i64) -> Result<(), Error> {
+        let u: u64;
+        if n < 0 {
+		    u = (!(n as u64) << 1) | 1;
+        } else {
+            u = (n as u64) << 1;
+        }
+        self.write_uint(u)
     }
 }

@@ -4,6 +4,8 @@ extern crate bytes;
 
 mod gob;
 mod types;
+mod ser;
 mod de;
 
+pub use ser::Serializer;
 pub use de::Deserializer;
