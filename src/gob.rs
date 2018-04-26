@@ -116,4 +116,11 @@ impl<B: BufMut> Message<B> {
         let bits = n.to_bits();
         self.write_uint(bits.swap_bytes())
     }
+
+    #[inline]
+    pub fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), Error> {
+        self.write_uint(bytes.len() as u64)?;
+        self.buf.put_slice(bytes);
+        Ok(())
+    }
 }

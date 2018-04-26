@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use gob::Serializer;
 use serde::Serialize;
-use serde_bytes::{Bytes, ByteBuf};
+use serde_bytes::Bytes;
 
 #[test]
 fn bool_true() {
@@ -257,4 +257,46 @@ fn char_unicode() {
         '語'.serialize(serializer).unwrap();
     }
     assert_eq!(buffer, &[6, 4, 0, 253, 1, 21, 60]);
+}
+
+#[test]
+fn bytes_empty() {
+    let mut buffer = Vec::new();
+    {
+        let serializer = Serializer::new(&mut buffer);
+        let bytes = Bytes::new(&[]);
+        bytes.serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer, &[3, 10, 0, 0]);
+}
+
+#[test]
+fn bytes_non_empty() {
+    let mut buffer = Vec::new();
+    {
+        let serializer = Serializer::new(&mut buffer);
+        let bytes = Bytes::new(&[1, 2, 3, 4]);
+        bytes.serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer, &[7, 10, 0, 4, 1, 2, 3, 4]);
+}
+
+#[test]
+fn str_empty() {
+    let mut buffer = Vec::new();
+    {
+        let serializer = Serializer::new(&mut buffer);
+        "".serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer, &[3, 12, 0, 0]);
+}
+
+#[test]
+fn str_non_empty() {
+    let mut buffer = Vec::new();
+    {
+        let serializer = Serializer::new(&mut buffer);
+        "foo".serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer, &[6, 12, 0, 3, 102, 111, 111]);
 }

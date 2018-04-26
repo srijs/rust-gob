@@ -115,12 +115,24 @@ impl<W: Write> ser::Serializer for Serializer<W> {
         self.serialize_i64(v as i64)
     }
 
-    fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+    fn serialize_str(mut self, v: &str) -> Result<Self::Ok, Self::Error> {
+        self.msg.write_int(TypeId::STRING.0)?;
+        self.msg.write_uint(0)?;
+        {
+            let ser = FieldValueSerializer { msg: &mut self.msg };
+            ser.serialize_str(v)?;
+        }
+        self.flush()
     }
 
-    fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+    fn serialize_bytes(mut self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
+        self.msg.write_int(TypeId::BYTES.0)?;
+        self.msg.write_uint(0)?;
+        {
+            let ser = FieldValueSerializer { msg: &mut self.msg };
+            ser.serialize_bytes(v)?;
+        }
+        self.flush()
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
@@ -256,11 +268,13 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
     }
 
     fn serialize_str(self, v: &str) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+        self.msg.write_bytes(v.as_bytes())?;
+        Ok(())
     }
 
     fn serialize_bytes(self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+        self.msg.write_bytes(v)?;
+        Ok(())
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
