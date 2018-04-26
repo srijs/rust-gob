@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use super::{TypeId, StructType, FieldType, WireType};
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct CommonType {
     #[serde(rename = "Name", default)]
     pub name: Cow<'static, str>,

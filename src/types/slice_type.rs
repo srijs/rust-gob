@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use super::{CommonType, TypeId, StructType, FieldType, WireType};
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct SliceType {
     pub common: CommonType,
     #[serde(rename = "Elem")]

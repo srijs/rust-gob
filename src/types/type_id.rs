@@ -1,6 +1,7 @@
 use serde::{Deserialize, Deserializer};
+use serde::{Serialize, Serializer};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct TypeId(pub i64);
 
 impl TypeId {
@@ -25,5 +26,11 @@ impl TypeId {
 impl<'de> Deserialize<'de> for TypeId {
     fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
         i64::deserialize(de).map(TypeId)
+    }
+}
+
+impl Serialize for TypeId{
+    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize(ser)
     }
 }

@@ -1,12 +1,13 @@
 use std::borrow::Cow;
 use std::fmt;
 
-use serde::{self, Deserialize, Deserializer};
+use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Visitor, MapAccess};
+use serde::ser::SerializeStruct;
 
 use super::{ArrayType, CommonType, SliceType, StructType, MapType, FieldType, TypeId};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub enum WireType {
     Array(ArrayType),
     Slice(SliceType),
@@ -34,6 +35,23 @@ impl WireType {
             &WireType::Struct(ref inner) => &inner.common,
             &WireType::Map(ref inner) => &inner.common
         }
+    }
+}
+
+impl Serialize for WireType {
+    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
+        let mut ser_struct = ser.serialize_struct("WireType", 1)?;
+        match self {
+            &WireType::Array(ref array_type) =>
+                ser_struct.serialize_field("ArrayT", array_type)?,
+            &WireType::Slice(ref slice_type) =>
+                ser_struct.serialize_field("SliceT", slice_type)?,
+            &WireType::Struct(ref struct_type) =>
+                ser_struct.serialize_field("StructT", struct_type)?,
+            &WireType::Map(ref map_type) =>
+                ser_struct.serialize_field("MapT", map_type)?
+        }
+        ser_struct.end()
     }
 }
 

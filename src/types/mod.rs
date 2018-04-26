@@ -23,16 +23,16 @@ pub use self::type_id::TypeId;
 
 #[derive(Debug)]
 pub(crate) struct TypeDefs {
-    map: BTreeMap<TypeId, WireType>
+    custom: BTreeMap<TypeId, WireType>
 }
 
 impl TypeDefs {
     pub fn new() -> TypeDefs {
-        TypeDefs { map: BTreeMap::new() }
+        TypeDefs { custom: BTreeMap::new() }
     }
 
     pub fn insert(&mut self, def: WireType) {
-        self.map.insert(def.common().id, def);
+        self.custom.insert(def.common().id, def);
     }
 
     pub fn lookup(&self, id: TypeId) -> Option<&WireType> {
@@ -45,7 +45,28 @@ impl TypeDefs {
             TypeId::STRUCT_TYPE => Some(&self::struct_type::STRUCT_TYPE_DEF),
             TypeId::WIRE_TYPE => Some(&self::wire_type::WIRE_TYPE_DEF),
             TypeId::COMMON_TYPE => Some(&self::common_type::COMMON_TYPE_DEF),
-            _ => self.map.get(&id)
+            _ => self.custom.get(&id)
         }
+    }
+
+    pub fn next_custom_id(&self) -> TypeId {
+        if let Some(&TypeId(last_type_id)) = self.custom.keys().next_back() {
+            TypeId(last_type_id + 1)
+        } else {
+            TypeId(65)
+        }
+    }
+
+    pub fn custom(&self) -> CustomTypeDefs {
+        CustomTypeDefs(self.custom.iter())
+    }
+}
+
+pub(crate) struct CustomTypeDefs<'a>(::std::collections::btree_map::Iter<'a, TypeId, WireType>);
+
+impl<'a> Iterator for CustomTypeDefs<'a> {
+    type Item = &'a WireType;
+    fn next(&mut self) -> Option<&'a WireType> {
+        self.0.next().map(|(_, t)| t)
     }
 }

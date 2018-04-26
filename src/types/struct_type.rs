@@ -2,7 +2,7 @@ use std::borrow::Cow;
 
 use super::{CommonType, TypeId, WireType, SliceType};
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct StructType {
     pub common: CommonType,
     // the fields of the struct
@@ -20,7 +20,7 @@ pub static STRUCT_TYPE_DEF: WireType = {
     })
 };
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FieldType {
     // the name of the field
     #[serde(rename = "Name")]
