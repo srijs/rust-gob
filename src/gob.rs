@@ -110,4 +110,10 @@ impl<B: BufMut> Message<B> {
         }
         self.write_uint(u)
     }
+
+    #[inline]
+    pub fn write_float(&mut self, n: f64) -> Result<(), Error> {
+        let bits = n.to_bits();
+        self.write_uint(bits.swap_bytes())
+    }
 }

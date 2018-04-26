@@ -98,11 +98,17 @@ impl<W: Write> ser::Serializer for Serializer<W> {
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+        self.serialize_f64(v as f64)
     }
 
-    fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+    fn serialize_f64(mut self, v: f64) -> Result<Self::Ok, Self::Error> {
+        self.msg.write_int(TypeId::FLOAT.0)?;
+        self.msg.write_uint(0)?;
+        {
+            let ser = FieldValueSerializer { msg: &mut self.msg };
+            ser.serialize_f64(v)?;
+        }
+        self.flush()
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
@@ -237,11 +243,12 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+        self.serialize_f64(v as f64)
     }
 
     fn serialize_f64(self, v: f64) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+        self.msg.write_float(v)?;
+        Ok(())
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {

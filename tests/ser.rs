@@ -198,3 +198,43 @@ fn i64_max() {
     }
     assert_eq!(buffer, &[11, 4, 0, 248, 255, 255, 255, 255, 255, 255, 255, 254]);
 }
+
+#[test]
+fn f32_zero() {
+    let mut buffer = Vec::new();
+    {
+        let serializer = Serializer::new(&mut buffer);
+        0f32.serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer, &[3, 8, 0, 0]);
+}
+
+#[test]
+fn f64_zero() {
+    let mut buffer = Vec::new();
+    {
+        let serializer = Serializer::new(&mut buffer);
+        0f64.serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer, &[3, 8, 0, 0]);
+}
+
+#[test]
+fn f64_pos() {
+    let mut buffer = Vec::new();
+    {
+        let serializer = Serializer::new(&mut buffer);
+        42f64.serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer, &[5, 8, 0, 254, 69, 64]);
+}
+
+#[test]
+fn f64_neg() {
+    let mut buffer = Vec::new();
+    {
+        let serializer = Serializer::new(&mut buffer);
+        (-42f64).serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer, &[5, 8, 0, 254, 69, 192]);
+}
