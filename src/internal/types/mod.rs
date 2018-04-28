@@ -1,41 +1,41 @@
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 
 mod wire_type;
-pub use self::wire_type::WireType;
+pub(crate) use self::wire_type::WireType;
 
 mod common_type;
-pub use self::common_type::CommonType;
+pub(crate) use self::common_type::CommonType;
 
 mod array_type;
-pub use self::array_type::ArrayType;
+pub(crate) use self::array_type::ArrayType;
 
 mod slice_type;
-pub use self::slice_type::SliceType;
+pub(crate) use self::slice_type::SliceType;
 
 mod struct_type;
-pub use self::struct_type::{FieldType, StructType};
+pub(crate) use self::struct_type::{FieldType, StructType};
 
 mod map_type;
-pub use self::map_type::MapType;
+pub(crate) use self::map_type::MapType;
 
-mod type_id;
-pub use self::type_id::TypeId;
+pub use ::TypeId;
 
 #[derive(Debug)]
-pub(crate) struct TypeDefs {
+pub struct Types {
     custom: BTreeMap<TypeId, WireType>
 }
 
-impl TypeDefs {
-    pub fn new() -> TypeDefs {
-        TypeDefs { custom: BTreeMap::new() }
+impl Types {
+    pub fn new() -> Types {
+        Types { custom: BTreeMap::new() }
     }
 
-    pub fn insert(&mut self, def: WireType) {
+    pub(crate) fn insert(&mut self, def: WireType) {
         self.custom.insert(def.common().id, def);
     }
 
-    pub fn lookup(&self, id: TypeId) -> Option<&WireType> {
+    pub(crate) fn lookup(&self, id: TypeId) -> Option<&WireType> {
         match id {
             TypeId::ARRAY_TYPE => Some(&self::array_type::ARRAY_TYPE_DEF),
             TypeId::MAP_TYPE => Some(&self::map_type::MAP_TYPE_DEF),
@@ -49,7 +49,7 @@ impl TypeDefs {
         }
     }
 
-    pub fn next_custom_id(&self) -> TypeId {
+    pub(crate) fn next_custom_id(&self) -> TypeId {
         if let Some(&TypeId(last_type_id)) = self.custom.keys().next_back() {
             TypeId(last_type_id + 1)
         } else {
@@ -57,14 +57,14 @@ impl TypeDefs {
         }
     }
 
-    pub fn custom(&self) -> CustomTypeDefs {
-        CustomTypeDefs(self.custom.iter())
+    pub(crate) fn custom(&self) -> CustomTypes {
+        CustomTypes(self.custom.iter())
     }
 }
 
-pub(crate) struct CustomTypeDefs<'a>(::std::collections::btree_map::Iter<'a, TypeId, WireType>);
+pub(crate) struct CustomTypes<'a>(::std::collections::btree_map::Iter<'a, TypeId, WireType>);
 
-impl<'a> Iterator for CustomTypeDefs<'a> {
+impl<'a> Iterator for CustomTypes<'a> {
     type Item = &'a WireType;
     fn next(&mut self) -> Option<&'a WireType> {
         self.0.next().map(|(_, t)| t)

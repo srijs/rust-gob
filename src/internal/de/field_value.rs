@@ -5,8 +5,8 @@ use serde::{self, Deserialize};
 use serde::de::Visitor;
 use serde::de::value::Error;
 
-use ::gob::Message;
-use ::types::{TypeId, TypeDefs, WireType};
+use ::internal::gob::Message;
+use ::internal::types::{TypeId, Types, WireType};
 
 use super::struct_value::StructValueDeserializer;
 use super::slice_value::SliceValueDeserializer;
@@ -16,12 +16,12 @@ use super::complex_value::ComplexValueDeserializer;
 
 pub(crate) struct FieldValueDeserializer<'t, 'de> where 'de: 't {
     type_id: TypeId,
-    defs: &'t TypeDefs,
+    defs: &'t Types,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
 impl<'t, 'de> FieldValueDeserializer<'t, 'de> {
-    pub fn new(type_id: TypeId, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> FieldValueDeserializer<'t, 'de> {
+    pub fn new(type_id: TypeId, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> FieldValueDeserializer<'t, 'de> {
         FieldValueDeserializer {
             type_id, defs, msg
         }

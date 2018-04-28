@@ -4,20 +4,20 @@ use serde;
 use serde::de::{Deserializer, Visitor};
 use serde::de::value::Error;
 
-use ::gob::Message;
-use ::types::{TypeId, TypeDefs, WireType};
+use ::internal::gob::Message;
+use ::internal::types::{TypeId, Types, WireType};
 
 use super::field_value::FieldValueDeserializer;
 use super::struct_value::StructValueDeserializer;
 
 pub(crate) struct ValueDeserializer<'t, 'de> where 'de: 't {
     type_id: TypeId,
-    defs: &'t TypeDefs,
+    defs: &'t Types,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
 impl<'t, 'de> ValueDeserializer<'t, 'de> {
-    pub fn new(type_id: TypeId, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> ValueDeserializer<'t, 'de> {
+    pub fn new(type_id: TypeId, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> ValueDeserializer<'t, 'de> {
         ValueDeserializer { type_id, defs, msg }
     }
 }

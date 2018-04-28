@@ -4,19 +4,19 @@ use serde;
 use serde::de::{Deserializer, DeserializeSeed, IntoDeserializer, MapAccess, Visitor};
 use serde::de::value::Error;
 
-use ::gob::Message;
-use ::types::{StructType, FieldType, TypeDefs};
+use ::internal::gob::Message;
+use ::internal::types::{StructType, FieldType, Types};
 use super::FieldValueDeserializer;
 
 struct StructMapAccess<'t, 'de> where 'de: 't {
     def: &'t StructType,
-    defs: &'t TypeDefs,
+    defs: &'t Types,
     field_no: i64,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
 impl<'t, 'de> StructMapAccess<'t, 'de> {
-    fn new(def: &'t StructType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> StructMapAccess<'t, 'de> {
+    fn new(def: &'t StructType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> StructMapAccess<'t, 'de> {
         StructMapAccess {
             def, defs,
             field_no: -1,
@@ -64,13 +64,13 @@ impl<'f, 'de> MapAccess<'de> for StructMapAccess<'f, 'de> {
 
 pub(crate) struct StructValueDeserializer<'t, 'de> where 'de: 't {
     def: &'t StructType,
-    defs: &'t TypeDefs,
+    defs: &'t Types,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
 impl<'t, 'de> StructValueDeserializer<'t, 'de> {
     #[inline]
-    pub(crate) fn new(def: &'t StructType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> StructValueDeserializer<'t, 'de> {
+    pub(crate) fn new(def: &'t StructType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> StructValueDeserializer<'t, 'de> {
         StructValueDeserializer { def, defs, msg }
     }
 }

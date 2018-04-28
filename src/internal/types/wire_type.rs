@@ -42,14 +42,30 @@ impl Serialize for WireType {
     fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
         let mut ser_struct = ser.serialize_struct("WireType", 1)?;
         match self {
-            &WireType::Array(ref array_type) =>
-                ser_struct.serialize_field("ArrayT", array_type)?,
-            &WireType::Slice(ref slice_type) =>
-                ser_struct.serialize_field("SliceT", slice_type)?,
-            &WireType::Struct(ref struct_type) =>
-                ser_struct.serialize_field("StructT", struct_type)?,
-            &WireType::Map(ref map_type) =>
-                ser_struct.serialize_field("MapT", map_type)?
+            &WireType::Array(ref array_type) => {
+                ser_struct.serialize_field("ArrayT", array_type)?;
+                ser_struct.skip_field("SliceT")?;
+                ser_struct.skip_field("StructT")?;
+                ser_struct.skip_field("MapT")?;
+            },
+            &WireType::Slice(ref slice_type) => {
+                ser_struct.skip_field("ArrayT")?;
+                ser_struct.serialize_field("SliceT", slice_type)?;
+                ser_struct.skip_field("StructT")?;
+                ser_struct.skip_field("MapT")?;
+            },
+            &WireType::Struct(ref struct_type) => {
+                ser_struct.skip_field("ArrayT")?;
+                ser_struct.skip_field("SliceT")?;
+                ser_struct.serialize_field("StructT", struct_type)?;
+                ser_struct.skip_field("MapT")?;
+            },
+            &WireType::Map(ref map_type) => {
+                ser_struct.skip_field("ArrayT")?;
+                ser_struct.skip_field("SliceT")?;
+                ser_struct.skip_field("StructT")?;
+                ser_struct.serialize_field("MapT", map_type)?;
+            }
         }
         ser_struct.end()
     }

@@ -3,19 +3,19 @@ use std::io::Cursor;
 use serde::de::{Deserializer, DeserializeSeed, SeqAccess, Visitor};
 use serde::de::value::Error;
 
-use ::gob::Message;
-use ::types::{SliceType, TypeDefs};
+use ::internal::gob::Message;
+use ::internal::types::{SliceType, Types};
 use super::FieldValueDeserializer;
 
 struct SliceSeqAccess<'t, 'de> where 'de: 't {
     def: &'t SliceType,
-    defs: &'t TypeDefs,
+    defs: &'t Types,
     remaining_count: u64,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
 impl<'t, 'de> SliceSeqAccess<'t, 'de> {
-    fn new(def: &'t SliceType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> Result<SliceSeqAccess<'t, 'de>, Error> {
+    fn new(def: &'t SliceType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> Result<SliceSeqAccess<'t, 'de>, Error> {
         let remaining_count = msg.read_uint()?;
 
         Ok(SliceSeqAccess { def, defs, remaining_count, msg })
@@ -43,13 +43,13 @@ impl<'f, 'de> SeqAccess<'de> for SliceSeqAccess<'f, 'de> {
 
 pub(crate) struct SliceValueDeserializer<'t, 'de> where 'de: 't {
     def: &'t SliceType,
-    defs: &'t TypeDefs,
+    defs: &'t Types,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
 impl<'t, 'de> SliceValueDeserializer<'t, 'de> {
     #[inline]
-    pub(crate) fn new(def: &'t SliceType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> SliceValueDeserializer<'t, 'de> {
+    pub(crate) fn new(def: &'t SliceType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> SliceValueDeserializer<'t, 'de> {
         SliceValueDeserializer { def, defs, msg }
     }
 }

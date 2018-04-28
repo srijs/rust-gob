@@ -1,28 +1,16 @@
+//! Deserialization
+
 use std::io::Cursor;
 
 use serde::{self, Deserialize};
 use serde::de::Visitor;
 use serde::de::value::Error;
 
-use ::gob::Message;
-use ::types::{TypeId, TypeDefs, WireType};
+use ::internal::gob::Message;
+use ::internal::types::{TypeId, Types, WireType};
 
-mod field_value;
-mod struct_value;
-mod slice_value;
-mod array_value;
-mod map_value;
-mod complex_value;
-mod value;
-
-use self::field_value::FieldValueDeserializer;
-use self::value::ValueDeserializer;
-
-impl From<::gob::Error> for Error {
-    fn from(err: ::gob::Error) -> Error {
-        serde::de::Error::custom(format!("{:?}", err))
-    }
-}
+use ::internal::de::FieldValueDeserializer;
+use ::internal::de::ValueDeserializer;
 
 pub struct Deserializer<'de> {
     msg: Message<Cursor<&'de [u8]>>
@@ -42,7 +30,7 @@ impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
     fn deserialize_any<V>(mut self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
-        let mut defs = TypeDefs::new();
+        let mut defs = Types::new();
 
         loop {
             let _len = self.msg.read_bytes_len()?;

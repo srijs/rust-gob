@@ -3,19 +3,19 @@ use std::io::Cursor;
 use serde::de::{Deserializer, DeserializeSeed, MapAccess, Visitor};
 use serde::de::value::Error;
 
-use ::gob::Message;
-use ::types::{MapType, TypeDefs};
+use ::internal::gob::Message;
+use ::internal::types::{MapType, Types};
 use super::FieldValueDeserializer;
 
 struct MapMapAccess<'t, 'de> where 'de: 't {
     def: &'t MapType,
-    defs: &'t TypeDefs,
+    defs: &'t Types,
     remaining_count: u64,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
 impl<'t, 'de> MapMapAccess<'t, 'de> {
-    fn new(def: &'t MapType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> Result<MapMapAccess<'t, 'de>, Error> {
+    fn new(def: &'t MapType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> Result<MapMapAccess<'t, 'de>, Error> {
         let remaining_count = msg.read_uint()?;
 
         Ok(MapMapAccess { def, defs, remaining_count, msg })
@@ -50,13 +50,13 @@ impl<'f, 'de> MapAccess<'de> for MapMapAccess<'f, 'de> {
 
 pub(crate) struct MapValueDeserializer<'t, 'de> where 'de: 't {
     def: &'t MapType,
-    defs: &'t TypeDefs,
+    defs: &'t Types,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
 impl<'t, 'de> MapValueDeserializer<'t, 'de> {
     #[inline]
-    pub(crate) fn new(def: &'t MapType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> MapValueDeserializer<'t, 'de> {
+    pub(crate) fn new(def: &'t MapType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> MapValueDeserializer<'t, 'de> {
         MapValueDeserializer { def, defs, msg }
     }
 }

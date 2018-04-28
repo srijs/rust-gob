@@ -4,19 +4,19 @@ use serde;
 use serde::de::{Deserializer, DeserializeSeed, SeqAccess, Visitor};
 use serde::de::value::Error;
 
-use ::gob::Message;
-use ::types::{ArrayType, TypeDefs};
+use ::internal::gob::Message;
+use ::internal::types::{ArrayType, Types};
 use super::FieldValueDeserializer;
 
 struct ArraySeqAccess<'t, 'de> where 'de: 't {
     def: &'t ArrayType,
-    defs: &'t TypeDefs,
+    defs: &'t Types,
     remaining_count: u64,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
 impl<'t, 'de> ArraySeqAccess<'t, 'de> {
-    fn new(def: &'t ArrayType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> Result<ArraySeqAccess<'t, 'de>, Error> {
+    fn new(def: &'t ArrayType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> Result<ArraySeqAccess<'t, 'de>, Error> {
         let remaining_count = msg.read_uint()?;
 
         if remaining_count != def.len as u64 {
@@ -48,13 +48,13 @@ impl<'f, 'de> SeqAccess<'de> for ArraySeqAccess<'f, 'de> {
 
 pub(crate) struct ArrayValueDeserializer<'t, 'de> where 'de: 't {
     def: &'t ArrayType,
-    defs: &'t TypeDefs,
+    defs: &'t Types,
     msg: &'t mut Message<Cursor<&'de [u8]>>
 }
 
 impl<'t, 'de> ArrayValueDeserializer<'t, 'de> {
     #[inline]
-    pub(crate) fn new(def: &'t ArrayType, defs: &'t TypeDefs, msg: &'t mut Message<Cursor<&'de [u8]>>) -> ArrayValueDeserializer<'t, 'de> {
+    pub(crate) fn new(def: &'t ArrayType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> ArrayValueDeserializer<'t, 'de> {
         ArrayValueDeserializer { def, defs, msg }
     }
 }

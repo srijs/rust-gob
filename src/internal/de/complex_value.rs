@@ -3,7 +3,7 @@ use std::io::Cursor;
 use serde::de::{Deserializer, DeserializeSeed, IntoDeserializer, SeqAccess, Visitor};
 use serde::de::value::Error;
 
-use ::gob::Message;
+use ::internal::gob::Message;
 
 struct ComplexSeqAccess<'t, 'de> where 'de: 't {
     remaining_count: u64,
