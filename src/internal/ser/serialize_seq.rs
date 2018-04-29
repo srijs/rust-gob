@@ -68,8 +68,12 @@ impl<'c, 't> ser::SerializeSeq for SerializeSeqValue<'c, 't> {
         Ok(())
     }
 
-    fn end(self) -> Result<Self::Ok, Self::Error> {
+    fn end(mut self) -> Result<Self::Ok, Self::Error> {
         let is_empty = self.len == 0;
+
+        if is_empty {
+            self.ctx.value.write_uint(0)?;
+        }
 
         Ok(SerializationOk {
             ctx: self.ctx,
