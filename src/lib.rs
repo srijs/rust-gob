@@ -4,10 +4,9 @@ extern crate bytes;
 
 mod internal;
 
-pub mod schema;
+mod schema;
 pub mod ser;
 pub mod de;
 
-pub use schema::{Schema, TypeId};
-pub use ser::StreamSerializer;
 pub use de::Deserializer;
+pub use ser::StreamSerializer;

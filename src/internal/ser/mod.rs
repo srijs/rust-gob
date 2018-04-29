@@ -9,7 +9,7 @@ use ::internal::utils::Bow;
 use ::internal::gob::Message;
 use ::internal::types::{WireType, TypeId, Types};
 
-use ::Schema;
+use ::schema::Schema;
 
 mod serialize_struct;
 pub(crate) use self::serialize_struct::SerializeStructValue;

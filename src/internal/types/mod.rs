@@ -19,7 +19,7 @@ pub(crate) use self::struct_type::{FieldType, StructType};
 mod map_type;
 pub(crate) use self::map_type::MapType;
 
-pub use ::TypeId;
+pub use ::schema::TypeId;
 
 #[derive(Debug)]
 pub struct Types {

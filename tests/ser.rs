@@ -5,8 +5,8 @@ extern crate serde_bytes;
 
 use std::collections::HashMap;
 
-use gob::{Schema, TypeId};
-use gob::ser::Serializer;
+use gob::StreamSerializer;
+use gob::ser::{Serializer, Schema, TypeId};
 use serde::Serialize;
 use serde_bytes::Bytes;
 
@@ -14,8 +14,8 @@ use serde_bytes::Bytes;
 fn bool_true() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::BOOL, &mut buffer);
-        true.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::BOOL, &true).unwrap();
     }
     assert_eq!(buffer, &[3, 2, 0, 1]);
 }
@@ -24,8 +24,8 @@ fn bool_true() {
 fn bool_false() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::BOOL,  &mut buffer);
-        false.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::BOOL, &false).unwrap();
     }
     assert_eq!(buffer, &[3, 2, 0, 0]);
 }
@@ -34,8 +34,8 @@ fn bool_false() {
 fn u8_zero() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::UINT, &mut buffer);
-        0u8.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::UINT, &0u8).unwrap();
     }
     assert_eq!(buffer, &[3, 6, 0, 0]);
 }
@@ -44,8 +44,8 @@ fn u8_zero() {
 fn u16_zero() {
         let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::UINT, &mut buffer);
-        0u16.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::UINT, &0u16).unwrap();
     }
     assert_eq!(buffer, &[3, 6, 0, 0]);
 }
@@ -54,8 +54,8 @@ fn u16_zero() {
 fn u32_zero() {
         let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::UINT, &mut buffer);
-        0u32.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::UINT, &0u32).unwrap();
     }
     assert_eq!(buffer, &[3, 6, 0, 0]);
 }
@@ -64,8 +64,8 @@ fn u32_zero() {
 fn u64_zero() {
         let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::UINT, &mut buffer);
-        0u64.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::UINT, &0u64).unwrap();
     }
     assert_eq!(buffer, &[3, 6, 0, 0]);
 }
@@ -74,8 +74,8 @@ fn u64_zero() {
 fn u64_small() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::UINT, &mut buffer);
-        42u8.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::UINT, &42u64).unwrap();
     }
     assert_eq!(buffer, &[3, 6, 0, 42]);
 }
@@ -84,8 +84,8 @@ fn u64_small() {
 fn u64_big() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::UINT, &mut buffer);
-        1234u64.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::UINT, &1234u64).unwrap();
     }
     assert_eq!(buffer, &[5, 6, 0, 254, 4, 210]);
 }
@@ -94,8 +94,8 @@ fn u64_big() {
 fn u64_max() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::UINT, &mut buffer);
-        ::std::u64::MAX.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::UINT, &::std::u64::MAX).unwrap();
     }
     assert_eq!(buffer, &[11, 6, 0, 248, 255, 255, 255, 255, 255, 255, 255, 255]);
 }
@@ -104,8 +104,8 @@ fn u64_max() {
 fn i8_zero() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        0i8.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &0i8).unwrap();
     }
     assert_eq!(buffer, &[3, 4, 0, 0]);
 }
@@ -114,8 +114,8 @@ fn i8_zero() {
 fn i16_zero() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        0i16.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &0i16).unwrap();
     }
     assert_eq!(buffer, &[3, 4, 0, 0]);
 }
@@ -124,8 +124,8 @@ fn i16_zero() {
 fn i32_zero() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        0i32.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &0i32).unwrap();
     }
     assert_eq!(buffer, &[3, 4, 0, 0]);
 }
@@ -134,8 +134,8 @@ fn i32_zero() {
 fn i64_zero() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        0i64.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &0i64).unwrap();
     }
     assert_eq!(buffer, &[3, 4, 0, 0]);
 }
@@ -144,8 +144,8 @@ fn i64_zero() {
 fn i64_small_pos() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        42i64.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &42i64).unwrap();
     }
     assert_eq!(buffer, &[3, 4, 0, 84]);
 }
@@ -154,8 +154,8 @@ fn i64_small_pos() {
 fn i64_small_neg() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        (-42i64).serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &-42i64).unwrap();
     }
     assert_eq!(buffer, &[3, 4, 0, 83]);
 }
@@ -164,8 +164,8 @@ fn i64_small_neg() {
 fn i64_big_pos() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        1234i64.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &1234i64).unwrap();
     }
     assert_eq!(buffer, &[5, 4, 0, 254, 9, 164]);
 }
@@ -174,8 +174,8 @@ fn i64_big_pos() {
 fn i64_big_neg() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        (-1234i64).serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &-1234i64).unwrap();
     }
     assert_eq!(buffer, &[5, 4, 0, 254, 9, 163]);
 }
@@ -184,8 +184,8 @@ fn i64_big_neg() {
 fn i64_min() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        ::std::i64::MIN.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &::std::i64::MIN).unwrap();
     }
     assert_eq!(buffer, &[11, 4, 0, 248, 255, 255, 255, 255, 255, 255, 255, 255]);
 }
@@ -194,8 +194,8 @@ fn i64_min() {
 fn i64_max() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        ::std::i64::MAX.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &::std::i64::MAX).unwrap();
     }
     assert_eq!(buffer, &[11, 4, 0, 248, 255, 255, 255, 255, 255, 255, 255, 254]);
 }
@@ -204,8 +204,8 @@ fn i64_max() {
 fn f32_zero() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::FLOAT, &mut buffer);
-        0f32.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::FLOAT, &0f32).unwrap();
     }
     assert_eq!(buffer, &[3, 8, 0, 0]);
 }
@@ -214,8 +214,8 @@ fn f32_zero() {
 fn f64_zero() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::FLOAT, &mut buffer);
-        0f64.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::FLOAT, &0f64).unwrap();
     }
     assert_eq!(buffer, &[3, 8, 0, 0]);
 }
@@ -224,8 +224,8 @@ fn f64_zero() {
 fn f64_pos() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::FLOAT, &mut buffer);
-        42f64.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::FLOAT, &42f64).unwrap();
     }
     assert_eq!(buffer, &[5, 8, 0, 254, 69, 64]);
 }
@@ -234,8 +234,8 @@ fn f64_pos() {
 fn f64_neg() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::FLOAT, &mut buffer);
-        (-42f64).serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::FLOAT, &-42f64).unwrap();
     }
     assert_eq!(buffer, &[5, 8, 0, 254, 69, 192]);
 }
@@ -244,8 +244,8 @@ fn f64_neg() {
 fn char_ascii() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        'f'.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &'f').unwrap();
     }
     assert_eq!(buffer, &[4, 4, 0, 255, 204]);
 }
@@ -254,8 +254,8 @@ fn char_ascii() {
 fn char_unicode() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::INT, &mut buffer);
-        '語'.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::INT, &'語').unwrap();
     }
     assert_eq!(buffer, &[6, 4, 0, 253, 1, 21, 60]);
 }
@@ -264,9 +264,8 @@ fn char_unicode() {
 fn bytes_empty() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::BYTES, &mut buffer);
-        let bytes = Bytes::new(&[]);
-        bytes.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::BYTES, &Bytes::new(&[])).unwrap();
     }
     assert_eq!(buffer, &[3, 10, 0, 0]);
 }
@@ -275,9 +274,8 @@ fn bytes_empty() {
 fn bytes_non_empty() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::BYTES, &mut buffer);
-        let bytes = Bytes::new(&[1, 2, 3, 4]);
-        bytes.serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::BYTES, &Bytes::new(&[1, 2, 3, 4])).unwrap();
     }
     assert_eq!(buffer, &[7, 10, 0, 4, 1, 2, 3, 4]);
 }
@@ -286,8 +284,8 @@ fn bytes_non_empty() {
 fn str_empty() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::STRING, &mut buffer);
-        "".serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::STRING, &"").unwrap();
     }
     assert_eq!(buffer, &[3, 12, 0, 0]);
 }
@@ -296,8 +294,8 @@ fn str_empty() {
 fn str_non_empty() {
     let mut buffer = Vec::new();
     {
-        let serializer = Serializer::new(TypeId::STRING, &mut buffer);
-        "foo".serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(TypeId::STRING, &"foo").unwrap();
     }
     assert_eq!(buffer, &[6, 12, 0, 3, 102, 111, 111]);
 }
@@ -305,11 +303,10 @@ fn str_non_empty() {
 #[test]
 fn vec_of_bool_to_empty_slice() {
     let mut buffer = Vec::new();
-    let mut schema = Schema::new();
-    let id = schema.register_slice_type(TypeId::BOOL);
     {
-        let serializer = Serializer::with_schema(id, &mut schema, &mut buffer);
-        Vec::<bool>::new().serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        let id = stream.schema_mut().register_slice_type(TypeId::BOOL);
+        stream.serialize(id, &Vec::<bool>::new()).unwrap();
     }
     assert_eq!(buffer,
         &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0]);
@@ -318,11 +315,10 @@ fn vec_of_bool_to_empty_slice() {
 #[test]
 fn vec_of_bool_to_non_empty_slice() {
     let mut buffer = Vec::new();
-    let mut schema = Schema::new();
-    let id = schema.register_slice_type(TypeId::BOOL);
     {
-        let serializer = Serializer::with_schema(id, &mut schema, &mut buffer);
-        vec![true, false].serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        let id = stream.schema_mut().register_slice_type(TypeId::BOOL);
+        stream.serialize(id, &vec![true, false]).unwrap();
     }
     assert_eq!(buffer,
         &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 6, 255, 130, 0, 2, 1, 0]);
@@ -331,11 +327,10 @@ fn vec_of_bool_to_non_empty_slice() {
 #[test]
 fn vec_of_bool_to_empty_array() {
     let mut buffer = Vec::new();
-    let mut schema = Schema::new();
-    let id = schema.register_array_type(TypeId::BOOL, 0);
     {
-        let serializer = Serializer::with_schema(id, &mut schema, &mut buffer);
-        Vec::<bool>::new().serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        let id = stream.schema_mut().register_array_type(TypeId::BOOL, 0);
+        stream.serialize(id, &Vec::<bool>::new()).unwrap();
     }
     assert_eq!(buffer,
         &[12, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0]);
@@ -344,11 +339,10 @@ fn vec_of_bool_to_empty_array() {
 #[test]
 fn vec_of_bool_to_non_empty_array() {
     let mut buffer = Vec::new();
-    let mut schema = Schema::new();
-    let id = schema.register_array_type(TypeId::BOOL, 2);
     {
-        let serializer = Serializer::with_schema(id, &mut schema, &mut buffer);
-        vec![true, false].serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        let id = stream.schema_mut().register_array_type(TypeId::BOOL,  2);
+        stream.serialize(id, &vec![true, false]).unwrap();
     }
     assert_eq!(buffer,
         &[14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0]);
@@ -363,14 +357,13 @@ fn point_struct() {
     }
 
     let mut buffer = Vec::new();
-    let mut schema = Schema::new();
-    let id = schema.register_struct_type("Point")
-        .field("X", TypeId::INT)
-        .field("Y", TypeId::INT)
-        .finish();
     {
-        let serializer = Serializer::with_schema(id, &mut schema, &mut buffer);
-        (Point { x: 22, y: 33}).serialize(serializer).unwrap();
+        let mut stream = StreamSerializer::new(&mut buffer);
+        let id = stream.schema_mut().register_struct_type("Point")
+            .field("X", TypeId::INT)
+            .field("Y", TypeId::INT)
+            .finish();
+        stream.serialize(id, &Point { x: 22, y: 33 }).unwrap();
     }
     assert_eq!(buffer, [
         0x1f, 0xff, 0x81, 0x03, 0x01, 0x01, 0x05, 0x50,

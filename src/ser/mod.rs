@@ -10,9 +10,9 @@ use serde::de::value::Error;
 use ::internal::utils::Bow;
 use ::internal::ser::{SerializationCtx, FieldValueSerializer};
 use ::internal::gob::Message;
-use ::internal::types::{WireType, TypeId, Types};
+use ::internal::types::WireType;
 
-use ::Schema;
+pub use ::schema::{Schema, TypeId, RegisterStructType};
 
 mod serialize_struct;
 pub use self::serialize_struct::SerializeStruct;
