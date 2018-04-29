@@ -75,6 +75,18 @@ impl<W> StreamSerializer<W> {
     pub fn schema_mut(&mut self) -> &mut Schema {
         &mut self.schema
     }
+
+    pub fn get_ref(&self) -> &W {
+        &self.out
+    }
+
+    pub fn get_mut(&mut self) -> &mut W {
+        &mut self.out
+    }
+
+    pub fn into_inner(self) -> W {
+        self.out
+    }
 }
 
 impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
