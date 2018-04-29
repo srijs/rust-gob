@@ -5,7 +5,7 @@ use std::borrow::Cow;
 use serde::{Deserialize, Deserializer};
 use serde::{Serialize, Serializer};
 
-use ::internal::types::{Types, WireType, CommonType, StructType, FieldType, SliceType, MapType};
+use ::internal::types::{Types, WireType, CommonType, StructType, FieldType, ArrayType, SliceType, MapType};
 
 pub struct Schema {
     pub(crate) types: Types
@@ -27,6 +27,17 @@ impl Schema {
         let wire_type = WireType::Slice(SliceType {
             common: CommonType { name: Cow::Borrowed(""), id: id },
             elem: element
+        });
+        self.types.insert(wire_type);
+        id
+    }
+
+    pub fn register_array_type(&mut self, element: TypeId, len: usize) -> TypeId {
+        let id = self.types.next_custom_id();
+        let wire_type = WireType::Array(ArrayType {
+            common: CommonType { name: Cow::Borrowed(""), id: id },
+            elem: element,
+            len: len as i64
         });
         self.types.insert(wire_type);
         id

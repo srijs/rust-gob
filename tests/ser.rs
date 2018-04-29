@@ -303,7 +303,7 @@ fn str_non_empty() {
 }
 
 #[test]
-fn vec_of_bool_empty() {
+fn vec_of_bool_to_empty_slice() {
     let mut buffer = Vec::new();
     let mut schema = Schema::new();
     let id = schema.register_slice_type(TypeId::BOOL);
@@ -316,7 +316,7 @@ fn vec_of_bool_empty() {
 }
 
 #[test]
-fn vec_of_bool_non_empty() {
+fn vec_of_bool_to_non_empty_slice() {
     let mut buffer = Vec::new();
     let mut schema = Schema::new();
     let id = schema.register_slice_type(TypeId::BOOL);
@@ -326,6 +326,32 @@ fn vec_of_bool_non_empty() {
     }
     assert_eq!(buffer,
         &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 6, 255, 130, 0, 2, 1, 0]);
+}
+
+#[test]
+fn vec_of_bool_to_empty_array() {
+    let mut buffer = Vec::new();
+    let mut schema = Schema::new();
+    let id = schema.register_array_type(TypeId::BOOL, 0);
+    {
+        let serializer = Serializer::with_schema(id, &mut schema, &mut buffer);
+        Vec::<bool>::new().serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer,
+        &[12, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0]);
+}
+
+#[test]
+fn vec_of_bool_to_non_empty_array() {
+    let mut buffer = Vec::new();
+    let mut schema = Schema::new();
+    let id = schema.register_array_type(TypeId::BOOL, 2);
+    {
+        let serializer = Serializer::with_schema(id, &mut schema, &mut buffer);
+        vec![true, false].serialize(serializer).unwrap();
+    }
+    assert_eq!(buffer,
+        &[14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0]);
 }
 
 #[test]
