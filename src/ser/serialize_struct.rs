@@ -1,23 +1,20 @@
-use std::borrow::Cow;
 use std::io::Write;
 
 use serde::ser::{self, Serialize};
 use serde::de::value::Error;
 
-use ::internal::utils::Bow;
-use ::internal::ser::{SerializationCtx, FieldValueSerializer};
-use ::internal::ser::SerializeStructValue;
-use ::internal::types::{TypeId, WireType, CommonType, StructType, FieldType};
+use ::internal::ser::{SerializationCtx, SerializeStructValue};
+use ::internal::types::TypeId;
 
 pub struct SerializeStruct<'t, W> {
-    inner: SerializeStructValue<'t, 't>,
+    inner: SerializeStructValue<'t>,
     out: W
 }
 
 impl<'t, W: Write> SerializeStruct<'t, W> {
     pub(crate) fn new(type_id: TypeId, ctx: SerializationCtx<'t>, out: W) -> Result<Self, Error> {
         Ok(SerializeStruct {
-            inner: SerializeStructValue::new(Bow::Owned(ctx), type_id)?,
+            inner: SerializeStructValue::new(ctx, type_id)?,
             out
         })
     }
@@ -36,6 +33,6 @@ impl<'t, W: Write> ser::SerializeStruct for SerializeStruct<'t, W> {
     fn end(self) -> Result<Self::Ok, Self::Error> {
         let type_id = self.inner.type_id();
         let mut ok = self.inner.end()?;
-        ok.ctx.finish(type_id, self.out)
+        ok.ctx.flush(type_id, self.out)
     }
 }

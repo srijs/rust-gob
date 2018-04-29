@@ -1,24 +1,20 @@
-use std::borrow::Cow;
-use std::io::Write;
-
 use serde::ser::{self, Serialize};
 use serde::de::value::Error;
 
-use ::internal::utils::Bow;
-use ::internal::types::{TypeId, WireType, CommonType, SliceType};
+use ::internal::types::{TypeId, WireType};
 
 use super::{SerializationOk, SerializationCtx, FieldValueSerializer};
 
-pub(crate) struct SerializeSeqValue<'c, 't> where 't: 'c {
+pub(crate) struct SerializeSeqValue<'t> {
     needs_init: bool,
-    ctx: Bow<'c, SerializationCtx<'t>>,
+    ctx: SerializationCtx<'t>,
     type_id: TypeId,
     len: usize,
     elem: TypeId
 }
 
-impl<'c, 't> SerializeSeqValue<'c, 't> {
-    pub(crate) fn new(ctx: Bow<'c, SerializationCtx<'t>>, len: Option<usize>, type_id: TypeId) -> Result<Self, Error> {
+impl<'t> SerializeSeqValue<'t> {
+    pub(crate) fn new(ctx: SerializationCtx<'t>, len: Option<usize>, type_id: TypeId) -> Result<Self, Error> {
         let (len, id, elem) = match ctx.schema.types.lookup(type_id) {
             Some(&WireType::Slice(ref slice_type)) => {
                 if let Some(len) = len {
@@ -49,8 +45,8 @@ impl<'c, 't> SerializeSeqValue<'c, 't> {
     }
 }
 
-impl<'c, 't> ser::SerializeSeq for SerializeSeqValue<'c, 't> {
-    type Ok = SerializationOk<'c, 't>;
+impl<'t> ser::SerializeSeq for SerializeSeqValue<'t> {
+    type Ok = SerializationOk<'t>;
     type Error = Error;
 
     fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
@@ -60,11 +56,13 @@ impl<'c, 't> ser::SerializeSeq for SerializeSeqValue<'c, 't> {
             self.ctx.value.write_uint(self.len as u64)?;
             self.needs_init = false;
         }
+        let ctx = ::std::mem::replace(&mut self.ctx, SerializationCtx::new());
         let de = FieldValueSerializer {
-            ctx: Bow::Borrowed(&mut self.ctx),
+            ctx,
             type_id: self.elem
         };
-        value.serialize(de)?;
+        let ok = value.serialize(de)?;
+        self.ctx = ok.ctx;
         Ok(())
     }
 

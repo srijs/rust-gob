@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::io::{Cursor, Write};
 
 use serde::Serialize;
@@ -7,7 +6,7 @@ use serde::de::value::Error;
 
 use ::internal::utils::Bow;
 use ::internal::gob::Message;
-use ::internal::types::{WireType, TypeId, Types};
+use ::internal::types::TypeId;
 
 use ::schema::Schema;
 
@@ -16,8 +15,8 @@ pub(crate) use self::serialize_struct::SerializeStructValue;
 mod serialize_seq;
 pub(crate) use self::serialize_seq::SerializeSeqValue;
 
-pub(crate) struct SerializationOk<'c, 't> where 't: 'c {
-    pub ctx: Bow<'c, SerializationCtx<'t>>,
+pub(crate) struct SerializationOk<'t> {
+    pub ctx: SerializationCtx<'t>,
     pub is_empty: bool
 }
 
@@ -27,14 +26,18 @@ pub(crate) struct SerializationCtx<'t> {
 }
 
 impl<'t> SerializationCtx<'t> {
-    pub(crate) fn new() -> SerializationCtx<'t> {
+    pub(crate) fn new() -> Self {
+        SerializationCtx::with_schema(Bow::Owned(Schema::new()))
+    }
+
+    pub(crate) fn with_schema(schema: Bow<'t, Schema>) -> Self {
         SerializationCtx {
-            schema: Bow::Owned(Schema::new()),
+            schema,
             value: Message::new(Vec::new())
         }
     }
 
-    fn write<W: Write>(mut out: W, buf: &[u8]) -> Result<(), Error> {
+    fn write_buf<W: Write>(mut out: W, buf: &[u8]) -> Result<(), Error> {
         out.write_all(buf)
             .map_err(|err| ::serde::ser::Error::custom(err))
     }
@@ -46,36 +49,40 @@ impl<'t> SerializationCtx<'t> {
         let mut len_msg = Message::new(Cursor::new([0u8; 9]));
         len_msg.write_uint((buf.len() + type_id_pos) as u64)?;
         let len_pos = len_msg.get_ref().position() as usize;
-        SerializationCtx::write(&mut out, &len_msg.get_ref().get_ref()[..len_pos])?;
-        SerializationCtx::write(&mut out, &type_id_msg.get_ref().get_ref()[..type_id_pos])?;
-        SerializationCtx::write(out, buf)
+        SerializationCtx::write_buf(&mut out, &len_msg.get_ref().get_ref()[..len_pos])?;
+        SerializationCtx::write_buf(&mut out, &type_id_msg.get_ref().get_ref()[..type_id_pos])?;
+        SerializationCtx::write_buf(out, buf)
     }
 
-    pub(crate) fn finish<W: Write>(&mut self, type_id: TypeId, mut out: W) -> Result<(), Error> {
+    pub(crate) fn flush<W: Write>(&mut self, type_id: TypeId, mut out: W) -> Result<(), Error> {
         let mut wire_type_ctx = SerializationCtx::new();
-        for wire_type in self.schema.types.custom() {
+        let mut last_sent_type_id = self.schema.last_sent_type_id;
+        for wire_type in self.schema.types.custom(last_sent_type_id) {
             {
                 let ser = FieldValueSerializer {
-                    ctx: Bow::Borrowed(&mut wire_type_ctx),
+                    ctx: wire_type_ctx,
                     type_id: TypeId::WIRE_TYPE
                 };
-                wire_type.serialize(ser)?;
+                let ok = wire_type.serialize(ser)?;
+                wire_type_ctx = ok.ctx;
             }
             SerializationCtx::write_section(&mut out, -wire_type.common().id.0,
                 wire_type_ctx.value.get_ref())?;
             wire_type_ctx.value.get_mut().clear();
+            last_sent_type_id = Some(wire_type.common().id);
         }
+        self.schema.last_sent_type_id = last_sent_type_id;
         SerializationCtx::write_section(out, type_id.0,
             self.value.get_ref())
     }
 }
 
-pub(crate) struct FieldValueSerializer<'c, 't> where 't: 'c {
-    pub ctx: Bow<'c, SerializationCtx<'t>>,
+pub(crate) struct FieldValueSerializer<'t> {
+    pub ctx: SerializationCtx<'t>,
     pub type_id: TypeId
 }
 
-impl<'c, 't> FieldValueSerializer<'c, 't> {
+impl<'t> FieldValueSerializer<'t> {
     fn check_type(&self, got: TypeId) -> Result<(), Error> {
         if self.type_id != got {
             Err(ser::Error::custom(format!("type id mismatch: got {}, expected {}",
@@ -86,16 +93,16 @@ impl<'c, 't> FieldValueSerializer<'c, 't> {
     }
 }
 
-impl<'c, 't> ser::Serializer for FieldValueSerializer<'c, 't> {
-    type Ok = SerializationOk<'c, 't>;
+impl<'t> ser::Serializer for FieldValueSerializer<'t> {
+    type Ok = SerializationOk<'t>;
     type Error = Error;
 
-    type SerializeSeq = SerializeSeqValue<'c, 't>;
+    type SerializeSeq = SerializeSeqValue<'t>;
     type SerializeTuple = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
     type SerializeMap = Impossible<Self::Ok, Self::Error>;
-    type SerializeStruct = SerializeStructValue<'c, 't>;
+    type SerializeStruct = SerializeStructValue<'t>;
     type SerializeStructVariant = Impossible<Self::Ok, Self::Error>;
 
     #[inline]

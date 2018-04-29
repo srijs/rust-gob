@@ -1,24 +1,20 @@
-use std::borrow::Cow;
-use std::io::Write;
-
 use serde::ser::{self, Serialize};
 use serde::de::value::Error;
 
-use ::internal::utils::Bow;
-use ::internal::types::{TypeId, WireType, CommonType, StructType, FieldType};
+use ::internal::types::{TypeId, WireType, FieldType};
 
 use super::{SerializationOk, SerializationCtx, FieldValueSerializer};
 
-pub(crate) struct SerializeStructValue<'c, 't> where 't: 'c {
-    ctx: Bow<'c, SerializationCtx<'t>>,
+pub(crate) struct SerializeStructValue<'t> {
+    ctx: SerializationCtx<'t>,
     type_id: TypeId,
     fields: Vec<FieldType>,
     current_field_idx: usize,
     last_serialized_field_idx: i64
 }
 
-impl<'c, 't> SerializeStructValue<'c, 't> {
-    pub(crate) fn new(ctx: Bow<'c, SerializationCtx<'t>>, type_id: TypeId,) -> Result<Self, Error> {
+impl<'t> SerializeStructValue<'t> {
+    pub(crate) fn new(ctx: SerializationCtx<'t>, type_id: TypeId) -> Result<Self, Error> {
         let fields;
         if let Some(&WireType::Struct(ref struct_type)) = ctx.schema.types.lookup(type_id) {
             fields = struct_type.fields.to_vec();
@@ -39,8 +35,8 @@ impl<'c, 't> SerializeStructValue<'c, 't> {
     }
 }
 
-impl<'c, 't> ser::SerializeStruct for SerializeStructValue<'c, 't> {
-    type Ok = SerializationOk<'c, 't>;
+impl<'t> ser::SerializeStruct for SerializeStructValue<'t> {
+    type Ok = SerializationOk<'t>;
     type Error = Error;
 
     fn serialize_field<T: ?Sized>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
@@ -49,15 +45,17 @@ impl<'c, 't> ser::SerializeStruct for SerializeStructValue<'c, 't> {
         let pre_pos = self.ctx.value.get_ref().len();
         let field_delta = self.current_field_idx as i64 - self.last_serialized_field_idx;
         self.ctx.value.write_uint(field_delta as u64)?;
-        let is_empty = {
+        let ctx = ::std::mem::replace(&mut self.ctx, SerializationCtx::new());
+        let ok = {
             let de = FieldValueSerializer {
-                ctx: Bow::Borrowed(&mut self.ctx),
+                ctx,
                 type_id: self.fields[self.current_field_idx].id
             };
-            value.serialize(de)?.is_empty
+            value.serialize(de)?
         };
+        self.ctx = ok.ctx;
 
-        if !is_empty {
+        if !ok.is_empty {
             self.last_serialized_field_idx = self.current_field_idx as i64;
         } else {
             // reset the buffer to the previous position

@@ -8,12 +8,13 @@ use serde::{Serialize, Serializer};
 use ::internal::types::{Types, WireType, CommonType, StructType, FieldType, ArrayType, SliceType, MapType};
 
 pub struct Schema {
-    pub(crate) types: Types
+    pub(crate) types: Types,
+    pub(crate) last_sent_type_id: Option<TypeId>
 }
 
 impl Schema {
     pub fn new() -> Schema {
-        Schema { types: Types::new() }
+        Schema { types: Types::new(), last_sent_type_id: None }
     }
 
     pub fn register_struct_type<S>(&mut self, name: S) -> RegisterStructType

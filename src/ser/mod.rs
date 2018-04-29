@@ -1,7 +1,6 @@
 //! Serialization
 
-use std::collections::HashMap;
-use std::io::{Cursor, Write};
+use std::io::Write;
 
 use serde::Serialize;
 use serde::ser::{self, Impossible};
@@ -9,8 +8,6 @@ use serde::de::value::Error;
 
 use ::internal::utils::Bow;
 use ::internal::ser::{SerializationCtx, FieldValueSerializer};
-use ::internal::gob::Message;
-use ::internal::types::WireType;
 
 pub use ::schema::{Schema, TypeId, RegisterStructType};
 
@@ -30,35 +27,33 @@ impl<'t, W> Serializer<'t, W> {
     /// Create a new serializer for a value of the specified type,
     /// with the provided output sink.
     pub fn new(id: TypeId, out: W) -> Serializer<'t, W> {
-        let ctx = SerializationCtx {
-            schema: Bow::Owned(Schema::new()),
-            value: Message::new(Vec::new())
-        };
-        Serializer { ctx, type_id: id, out }
+        let ctx = SerializationCtx::new();
+        Serializer::with_context(id, ctx, out)
     }
 
     /// Create a new serializer for a value of the specified type,
     /// with the provided schema and output sink.
     pub fn with_schema(id: TypeId, schema: &'t mut Schema, out: W) -> Serializer<'t, W> {
-        let ctx = SerializationCtx {
-            schema: Bow::Borrowed(schema),
-            value: Message::new(Vec::new())
-        };
+        let ctx = SerializationCtx::with_schema(Bow::Borrowed(schema));
+        Serializer::with_context(id, ctx, out)
+    }
+
+    fn with_context(id: TypeId, ctx: SerializationCtx<'t>, out: W) -> Self {
         Serializer { ctx, type_id: id, out }
     }
 }
 
 /// Serializes a stream of values.
 pub struct StreamSerializer<W> {
-    ctx: SerializationCtx<'static>,
+    schema: Schema,
     out: W,
 }
 
 impl<W> StreamSerializer<W> {
     /// Create a new stream serializer with the provided output sink.
     pub fn new(out: W) -> StreamSerializer<W> {
-        let ctx = SerializationCtx::new();
-        StreamSerializer { ctx, out }
+        let schema = Schema::new();
+        StreamSerializer { schema, out }
     }
 
     /// Serialize a value of the specified type. 
@@ -72,12 +67,13 @@ impl<W> StreamSerializer<W> {
 
     /// Create a serializer for a value of the specified type.
     pub fn serializer(&mut self, id: TypeId) -> Serializer<&mut W> {
-        Serializer::with_schema(id, &mut self.ctx.schema, &mut self.out)
+        let ctx = SerializationCtx::with_schema(Bow::Borrowed(&mut self.schema));
+        Serializer::with_context(id, ctx, &mut self.out)
     }
 
     /// Get a mutable reference to the schema.
     pub fn schema_mut(&mut self) -> &mut Schema {
-        &mut self.ctx.schema
+        &mut self.schema
     }
 }
 
@@ -95,14 +91,14 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
 
     fn serialize_bool(mut self, v: bool) -> Result<Self::Ok, Self::Error> {
         self.ctx.value.write_uint(0)?;
-        {
+        let mut ok = {
             let ser = FieldValueSerializer {
-                ctx: Bow::Borrowed(&mut self.ctx),
+                ctx: self.ctx,
                 type_id: self.type_id
             };
-            ser.serialize_bool(v)?;
-        }
-        self.ctx.finish(self.type_id, self.out)
+            ser.serialize_bool(v)?
+        };
+        ok.ctx.flush(self.type_id, self.out)
     }
 
     fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
@@ -119,14 +115,14 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
 
     fn serialize_i64(mut self, v: i64) -> Result<Self::Ok, Self::Error> {
         self.ctx.value.write_uint(0)?;
-        {
+        let mut ok = {
             let ser = FieldValueSerializer {
-                ctx: Bow::Borrowed(&mut self.ctx),
+                ctx: self.ctx,
                 type_id: self.type_id
             };
-            ser.serialize_i64(v)?;
-        }
-        self.ctx.finish(self.type_id, self.out)
+            ser.serialize_i64(v)?
+        };
+        ok.ctx.flush(self.type_id, self.out)
     }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
@@ -143,14 +139,14 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
 
     fn serialize_u64(mut self, v: u64) -> Result<Self::Ok, Self::Error> {
         self.ctx.value.write_uint(0)?;
-        {
+        let mut ok = {
             let ser = FieldValueSerializer {
-                ctx: Bow::Borrowed(&mut self.ctx),
+                ctx: self.ctx,
                 type_id: self.type_id
             };
-            ser.serialize_u64(v)?;
-        }
-        self.ctx.finish(self.type_id, self.out)
+            ser.serialize_u64(v)?
+        };
+        ok.ctx.flush(self.type_id, self.out)
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
@@ -159,14 +155,14 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
 
     fn serialize_f64(mut self, v: f64) -> Result<Self::Ok, Self::Error> {
         self.ctx.value.write_uint(0)?;
-        {
+        let mut ok = {
             let ser = FieldValueSerializer {
-                ctx: Bow::Borrowed(&mut self.ctx),
+                ctx: self.ctx,
                 type_id: self.type_id
             };
-            ser.serialize_f64(v)?;
-        }
-        self.ctx.finish(self.type_id, self.out)
+            ser.serialize_f64(v)?
+        };
+        ok.ctx.flush(self.type_id, self.out)
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
@@ -175,26 +171,26 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
 
     fn serialize_str(mut self, v: &str) -> Result<Self::Ok, Self::Error> {
         self.ctx.value.write_uint(0)?;
-        {
+        let mut ok = {
             let ser = FieldValueSerializer {
-                ctx: Bow::Borrowed(&mut self.ctx),
+                ctx: self.ctx,
                 type_id: self.type_id
             };
-            ser.serialize_str(v)?;
-        }
-        self.ctx.finish(self.type_id, self.out)
+            ser.serialize_str(v)?
+        };
+        ok.ctx.flush(self.type_id, self.out)
     }
 
     fn serialize_bytes(mut self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
         self.ctx.value.write_uint(0)?;
-        {
+        let mut ok = {
             let ser = FieldValueSerializer {
-                ctx: Bow::Borrowed(&mut self.ctx),
+                ctx: self.ctx,
                 type_id: self.type_id
             };
-            ser.serialize_bytes(v)?;
-        }
-        self.ctx.finish(self.type_id, self.out)
+            ser.serialize_bytes(v)?
+        };
+        ok.ctx.flush(self.type_id, self.out)
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {

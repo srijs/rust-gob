@@ -6,8 +6,7 @@ extern crate serde_bytes;
 use std::collections::HashMap;
 
 use gob::StreamSerializer;
-use gob::ser::{Serializer, Schema, TypeId};
-use serde::Serialize;
+use gob::ser::TypeId;
 use serde_bytes::Bytes;
 
 #[test]
@@ -346,6 +345,19 @@ fn vec_of_bool_to_non_empty_array() {
     }
     assert_eq!(buffer,
         &[14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0]);
+}
+
+#[test]
+fn vec_of_bool_to_empty_slice_twice() {
+    let mut buffer = Vec::new();
+    {
+        let mut stream = StreamSerializer::new(&mut buffer);
+        let id = stream.schema_mut().register_slice_type(TypeId::BOOL);
+        stream.serialize(id, &Vec::<bool>::new()).unwrap();
+        stream.serialize(id, &Vec::<bool>::new()).unwrap();
+    }
+    assert_eq!(buffer,
+        &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0, 4, 255, 130, 0, 0]);
 }
 
 #[test]

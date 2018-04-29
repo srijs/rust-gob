@@ -1,11 +1,5 @@
-use std::io::Cursor;
-
-use serde::{self, Deserialize};
-use serde::de::Visitor;
+use serde;
 use serde::de::value::Error;
-
-use ::internal::gob::Message;
-use ::internal::types::{TypeId, Types, WireType};
 
 mod field_value;
 mod struct_value;

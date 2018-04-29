@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::collections::BTreeMap;
 
 mod wire_type;
@@ -57,12 +56,17 @@ impl Types {
         }
     }
 
-    pub(crate) fn custom(&self) -> CustomTypes {
-        CustomTypes(self.custom.iter())
+    pub(crate) fn custom(&self, last_type_id: Option<TypeId>) -> CustomTypes {
+        if let Some(type_id) = last_type_id {
+            let next_type_id = TypeId(type_id.0 + 1);
+            CustomTypes(self.custom.range(::std::ops::RangeFrom { start: next_type_id }))
+        } else {
+            CustomTypes(self.custom.range(::std::ops::RangeFull))
+        }
     }
 }
 
-pub(crate) struct CustomTypes<'a>(::std::collections::btree_map::Iter<'a, TypeId, WireType>);
+pub(crate) struct CustomTypes<'a>(::std::collections::btree_map::Range<'a, TypeId, WireType>);
 
 impl<'a> Iterator for CustomTypes<'a> {
     type Item = &'a WireType;
