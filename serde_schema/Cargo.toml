@@ -1,0 +1,12 @@
+[package]
+name = "serde_schema"
+version = "0.1.0"
+authors = ["Sam Rijs <srijs@airpost.net>"]
+workspace = ".."
+
+[dependencies]
+serde = "1.0.39"
+serde_bytes = { version = "0.10.4", optional = true }
+
+[features]
+bytes = ["serde_bytes"]

@@ -14,6 +14,8 @@ mod serialize_struct;
 pub(crate) use self::serialize_struct::SerializeStructValue;
 mod serialize_seq;
 pub(crate) use self::serialize_seq::SerializeSeqValue;
+mod serialize_tuple;
+pub(crate) use self::serialize_tuple::SerializeTupleValue;
 
 pub(crate) struct SerializationOk<'t> {
     pub ctx: SerializationCtx<'t>,
@@ -98,7 +100,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
     type Error = Error;
 
     type SerializeSeq = SerializeSeqValue<'t>;
-    type SerializeTuple = Impossible<Self::Ok, Self::Error>;
+    type SerializeTuple = SerializeTupleValue<'t>;
     type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
     type SerializeMap = Impossible<Self::Ok, Self::Error>;
@@ -230,8 +232,8 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         SerializeSeqValue::new(self.ctx, len, self.type_id)
     }
 
-    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+    fn serialize_tuple(self, _len: usize) -> Result<Self::SerializeTuple, Self::Error> {
+        SerializeTupleValue::homogeneous(self.ctx, self.type_id)
     }
 
     fn serialize_tuple_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeTupleStruct, Self::Error> {

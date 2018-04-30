@@ -7,6 +7,10 @@ authors = ["Sam Rijs <srijs@airpost.net>"]
 bytes = "0.4.6"
 serde = "1.0.39"
 serde_derive = "1.0.42"
+serde_schema = { path = "serde_schema", features = ["bytes"] }
 
 [dev-dependencies]
 serde_bytes = "0.10.4"
+
+[workspace]
+members = ["serde_schema"]

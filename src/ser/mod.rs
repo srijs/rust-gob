@@ -5,16 +5,19 @@ use std::io::Write;
 use serde::Serialize;
 use serde::ser::{self, Impossible};
 use serde::de::value::Error;
+use serde_schema::SchemaSerialize;
 
 use ::internal::utils::Bow;
 use ::internal::ser::{SerializationCtx, FieldValueSerializer};
 
-pub use ::schema::{Schema, TypeId, RegisterStructType};
+pub use ::schema::{Schema, TypeId};
 
 mod serialize_struct;
 pub use self::serialize_struct::SerializeStruct;
 mod serialize_seq;
 pub use self::serialize_seq::SerializeSeq;
+mod serialize_tuple;
+pub use self::serialize_tuple::SerializeTuple;
 
 /// Serializes a single value.
 pub struct Serializer<'t, W> {
@@ -56,24 +59,12 @@ impl<W> StreamSerializer<W> {
         StreamSerializer { schema, out }
     }
 
-    /// Serialize a value of the specified type. 
-    pub fn serialize<T>(&mut self, id: TypeId, value: &T) -> Result<(), Error>
-        where T: Serialize,
+    /// Serialize a value onto the stream.
+    pub fn serialize<T>(&mut self, value: &T) -> Result<(), Error>
+        where T: SchemaSerialize,
               W: Write
     {
-        let ser = self.serializer(id);
-        value.serialize(ser)
-    }
-
-    /// Create a serializer for a value of the specified type.
-    pub fn serializer(&mut self, id: TypeId) -> Serializer<&mut W> {
-        let ctx = SerializationCtx::with_schema(Bow::Borrowed(&mut self.schema));
-        Serializer::with_context(id, ctx, &mut self.out)
-    }
-
-    /// Get a mutable reference to the schema.
-    pub fn schema_mut(&mut self) -> &mut Schema {
-        &mut self.schema
+        value.schema_serialize(self)
     }
 
     pub fn get_ref(&self) -> &W {
@@ -89,12 +80,29 @@ impl<W> StreamSerializer<W> {
     }
 }
 
+impl<'t, W: Write> ::serde_schema::SchemaSerializer for &'t mut StreamSerializer<W> {
+    type Ok = ();
+    type Error = Error;
+    type TypeId = TypeId;
+    type Schema = Schema;
+    type Serializer = Serializer<'t, &'t mut W>;
+
+    fn schema_mut(&mut self) -> &mut Self::Schema {
+        &mut self.schema
+    }
+
+    fn serializer(self, id: TypeId) -> Result<Self::Serializer, Self::Error> {
+        let ctx = SerializationCtx::with_schema(Bow::Borrowed(&mut self.schema));
+        Ok(Serializer::with_context(id, ctx, &mut self.out))
+    }
+}
+
 impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     type Ok = ();
     type Error = Error;
 
     type SerializeSeq = SerializeSeq<'t, W>;
-    type SerializeTuple = Impossible<Self::Ok, Self::Error>;
+    type SerializeTuple = SerializeTuple<'t, W>;
     type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
     type SerializeMap = Impossible<Self::Ok, Self::Error>;
@@ -244,8 +252,9 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         SerializeSeq::new(len, self.type_id, self.ctx, self.out)
     }
 
-    fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+    fn serialize_tuple(mut self, len: usize) -> Result<Self::SerializeTuple, Self::Error> {
+        self.ctx.value.write_uint(0)?;
+        SerializeTuple::homogeneous(self.type_id, self.ctx, self.out)
     }
 
     fn serialize_tuple_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeTupleStruct, Self::Error> {
