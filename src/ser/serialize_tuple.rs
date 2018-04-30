@@ -5,14 +5,15 @@ use serde::de::value::Error;
 
 use ::internal::ser::{SerializationCtx, SerializeTupleValue};
 use ::internal::types::TypeId;
+use ::internal::gob::Writer;
 
 pub struct SerializeTuple<'t, W> {
     inner: SerializeTupleValue<'t>,
-    out: W
+    out: Writer<W>
 }
 
 impl<'t, W: Write> SerializeTuple<'t, W> {
-    pub(crate) fn homogeneous(type_id: TypeId, ctx: SerializationCtx<'t>, out: W) -> Result<Self, Error> {
+    pub(crate) fn homogeneous(type_id: TypeId, ctx: SerializationCtx<'t>, out: Writer<W>) -> Result<Self, Error> {
         Ok(SerializeTuple {
             inner: SerializeTupleValue::homogeneous(ctx, type_id)?,
             out

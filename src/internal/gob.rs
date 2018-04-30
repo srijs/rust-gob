@@ -1,9 +1,12 @@
+use std::io::{self, Cursor, Write};
+
 use bytes::{BigEndian, Buf, BufMut};
 
 #[derive(Debug)]
 pub(crate) enum Error {
     IncompleteMessage,
-    IntegerOverflow
+    IntegerOverflow,
+    Io(io::Error)
 }
 
 pub(crate) struct Message<B> {
@@ -121,5 +124,46 @@ impl<B: BufMut> Message<B> {
         self.write_uint(bytes.len() as u64)?;
         self.buf.put_slice(bytes);
         Ok(())
+    }
+}
+
+pub(crate) struct Writer<W> {
+    inner: W
+}
+
+impl<W> Writer<W> {
+    pub fn new(inner: W) -> Writer<W> {
+        Writer { inner }
+    }
+
+    pub fn get_ref(&self) -> &W {
+        &self.inner
+    }
+
+    pub fn get_mut(&mut self) -> &mut W {
+        &mut self.inner
+    }
+
+    pub fn into_inner(self) -> W {
+        self.inner
+    }
+}
+
+impl<W: Write> Writer<W> {
+    fn write_buf(&mut self, buf: &[u8]) -> Result<(), Error> {
+        self.inner.write_all(buf)
+            .map_err(|err| Error::Io(err))
+    }
+
+    pub fn write_section(&mut self, type_id: i64, buf: &[u8]) -> Result<(), Error> {
+        let mut type_id_msg = Message::new(Cursor::new([0u8; 9]));
+        type_id_msg.write_int(type_id)?;
+        let type_id_pos = type_id_msg.get_ref().position() as usize;
+        let mut len_msg = Message::new(Cursor::new([0u8; 9]));
+        len_msg.write_uint((buf.len() + type_id_pos) as u64)?;
+        let len_pos = len_msg.get_ref().position() as usize;
+        self.write_buf(&len_msg.get_ref().get_ref()[..len_pos])?;
+        self.write_buf(&type_id_msg.get_ref().get_ref()[..type_id_pos])?;
+        self.write_buf(buf)
     }
 }

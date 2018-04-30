@@ -5,7 +5,7 @@ use serde::ser::{self, Impossible};
 use serde::de::value::Error;
 
 use ::internal::utils::Bow;
-use ::internal::gob::Message;
+use ::internal::gob::{Message, Writer};
 use ::internal::types::TypeId;
 
 use ::schema::Schema;
@@ -39,24 +39,7 @@ impl<'t> SerializationCtx<'t> {
         }
     }
 
-    fn write_buf<W: Write>(mut out: W, buf: &[u8]) -> Result<(), Error> {
-        out.write_all(buf)
-            .map_err(|err| ::serde::ser::Error::custom(err))
-    }
-
-    fn write_section<W: Write>(mut out: W, type_id: i64, buf: &[u8]) -> Result<(), Error> {
-        let mut type_id_msg = Message::new(Cursor::new([0u8; 9]));
-        type_id_msg.write_int(type_id)?;
-        let type_id_pos = type_id_msg.get_ref().position() as usize;
-        let mut len_msg = Message::new(Cursor::new([0u8; 9]));
-        len_msg.write_uint((buf.len() + type_id_pos) as u64)?;
-        let len_pos = len_msg.get_ref().position() as usize;
-        SerializationCtx::write_buf(&mut out, &len_msg.get_ref().get_ref()[..len_pos])?;
-        SerializationCtx::write_buf(&mut out, &type_id_msg.get_ref().get_ref()[..type_id_pos])?;
-        SerializationCtx::write_buf(out, buf)
-    }
-
-    pub(crate) fn flush<W: Write>(&mut self, type_id: TypeId, mut out: W) -> Result<(), Error> {
+    pub(crate) fn flush<W: Write>(&mut self, type_id: TypeId, mut writer: Writer<W>) -> Result<(), Error> {
         let mut wire_type_ctx = SerializationCtx::new();
         let mut last_sent_type_id = self.schema.last_sent_type_id;
         for wire_type in self.schema.types.custom(last_sent_type_id) {
@@ -68,14 +51,15 @@ impl<'t> SerializationCtx<'t> {
                 let ok = wire_type.serialize(ser)?;
                 wire_type_ctx = ok.ctx;
             }
-            SerializationCtx::write_section(&mut out, -wire_type.common().id.0,
+            writer.write_section(-wire_type.common().id.0,
                 wire_type_ctx.value.get_ref())?;
             wire_type_ctx.value.get_mut().clear();
             last_sent_type_id = Some(wire_type.common().id);
         }
         self.schema.last_sent_type_id = last_sent_type_id;
-        SerializationCtx::write_section(out, type_id.0,
-            self.value.get_ref())
+        writer.write_section(type_id.0,
+            self.value.get_ref())?;
+        Ok(())
     }
 }
 

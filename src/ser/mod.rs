@@ -8,6 +8,7 @@ use serde::de::value::Error;
 use serde_schema::SchemaSerialize;
 
 use ::internal::utils::Bow;
+use ::internal::gob::Writer;
 use ::internal::ser::{SerializationCtx, FieldValueSerializer};
 
 pub use ::schema::{Schema, TypeId};
@@ -23,7 +24,7 @@ pub use self::serialize_tuple::SerializeTuple;
 pub struct Serializer<'t, W> {
     ctx: SerializationCtx<'t>,
     type_id: TypeId,
-    out: W,
+    out: Writer<W>,
 }
 
 impl<'t, W> Serializer<'t, W> {
@@ -31,17 +32,17 @@ impl<'t, W> Serializer<'t, W> {
     /// with the provided output sink.
     pub fn new(id: TypeId, out: W) -> Serializer<'t, W> {
         let ctx = SerializationCtx::new();
-        Serializer::with_context(id, ctx, out)
+        Serializer::with_context(id, ctx, Writer::new(out))
     }
 
     /// Create a new serializer for a value of the specified type,
     /// with the provided schema and output sink.
     pub fn with_schema(id: TypeId, schema: &'t mut Schema, out: W) -> Serializer<'t, W> {
         let ctx = SerializationCtx::with_schema(Bow::Borrowed(schema));
-        Serializer::with_context(id, ctx, out)
+        Serializer::with_context(id, ctx, Writer::new(out))
     }
 
-    fn with_context(id: TypeId, ctx: SerializationCtx<'t>, out: W) -> Self {
+    fn with_context(id: TypeId, ctx: SerializationCtx<'t>, out: Writer<W>) -> Self {
         Serializer { ctx, type_id: id, out }
     }
 }
@@ -49,14 +50,14 @@ impl<'t, W> Serializer<'t, W> {
 /// Serializes a stream of values.
 pub struct StreamSerializer<W> {
     schema: Schema,
-    out: W,
+    out: Writer<W>,
 }
 
 impl<W> StreamSerializer<W> {
     /// Create a new stream serializer with the provided output sink.
     pub fn new(out: W) -> StreamSerializer<W> {
         let schema = Schema::new();
-        StreamSerializer { schema, out }
+        StreamSerializer { schema, out: Writer::new(out) }
     }
 
     /// Serialize a value onto the stream.
@@ -68,15 +69,15 @@ impl<W> StreamSerializer<W> {
     }
 
     pub fn get_ref(&self) -> &W {
-        &self.out
+        self.out.get_ref()
     }
 
     pub fn get_mut(&mut self) -> &mut W {
-        &mut self.out
+        self.out.get_mut()
     }
 
     pub fn into_inner(self) -> W {
-        self.out
+        self.out.into_inner()
     }
 }
 
@@ -93,7 +94,7 @@ impl<'t, W: Write> ::serde_schema::SchemaSerializer for &'t mut StreamSerializer
 
     fn serializer(self, id: TypeId) -> Result<Self::Serializer, Self::Error> {
         let ctx = SerializationCtx::with_schema(Bow::Borrowed(&mut self.schema));
-        Ok(Serializer::with_context(id, ctx, &mut self.out))
+        Ok(Serializer::with_context(id, ctx, Writer::new(self.out.get_mut())))
     }
 }
 

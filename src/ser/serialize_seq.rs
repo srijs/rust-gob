@@ -5,14 +5,15 @@ use serde::de::value::Error;
 
 use ::internal::ser::{SerializationCtx, SerializeSeqValue};
 use ::internal::types::TypeId;
+use ::internal::gob::Writer;
 
 pub struct SerializeSeq<'t, W> {
     inner: SerializeSeqValue<'t>,
-    out: W
+    out: Writer<W>
 }
 
 impl<'t, W: Write> SerializeSeq<'t, W> {
-    pub(crate) fn new(len: Option<usize>, type_id: TypeId, ctx: SerializationCtx<'t>, out: W) -> Result<Self, Error> {
+    pub(crate) fn new(len: Option<usize>, type_id: TypeId, ctx: SerializationCtx<'t>, out: Writer<W>) -> Result<Self, Error> {
         Ok(SerializeSeq {
             inner: SerializeSeqValue::new(ctx, len, type_id)?,
             out
