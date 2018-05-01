@@ -8,6 +8,7 @@ bytes = "0.4.6"
 serde = "1.0.39"
 serde_derive = "1.0.42"
 serde_schema = { path = "serde_schema", features = ["bytes"] }
+smallvec = "0.6.1"
 
 [dev-dependencies]
 serde_bytes = "0.10.4"

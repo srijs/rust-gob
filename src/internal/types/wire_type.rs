@@ -36,6 +36,15 @@ impl WireType {
             &WireType::Map(ref inner) => &inner.common
         }
     }
+
+    pub fn common_mut(&mut self) -> &mut CommonType {
+        match self {
+            &mut WireType::Array(ref mut inner) => &mut inner.common,
+            &mut WireType::Slice(ref mut inner) => &mut inner.common,
+            &mut WireType::Struct(ref mut inner) => &mut inner.common,
+            &mut WireType::Map(ref mut inner) => &mut inner.common
+        }
+    }
 }
 
 impl Serialize for WireType {

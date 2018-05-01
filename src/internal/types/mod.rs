@@ -48,14 +48,6 @@ impl Types {
         }
     }
 
-    pub(crate) fn next_custom_id(&self) -> TypeId {
-        if let Some(&TypeId(last_type_id)) = self.custom.keys().next_back() {
-            TypeId(last_type_id + 1)
-        } else {
-            TypeId(65)
-        }
-    }
-
     pub(crate) fn custom(&self, last_type_id: Option<TypeId>) -> CustomTypes {
         if let Some(type_id) = last_type_id {
             let next_type_id = TypeId(type_id.0 + 1);

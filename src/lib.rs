@@ -2,6 +2,7 @@ extern crate bytes;
 #[macro_use] extern crate serde;
 #[macro_use] extern crate serde_derive;
 extern crate serde_schema;
+extern crate smallvec;
 
 mod internal;
 
