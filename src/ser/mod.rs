@@ -94,7 +94,7 @@ impl<'t, W: Write> ::serde_schema::SchemaSerializer for &'t mut StreamSerializer
 
     fn serializer(self, id: TypeId) -> Result<Self::Serializer, Self::Error> {
         let ctx = SerializationCtx::with_schema(Bow::Borrowed(&mut self.schema));
-        Ok(Serializer::with_context(id, ctx, Writer::new(self.out.get_mut())))
+        Ok(Serializer::with_context(id, ctx, self.out.borrow_mut()))
     }
 }
 

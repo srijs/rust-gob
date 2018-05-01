@@ -40,23 +40,7 @@ impl<'t> SerializationCtx<'t> {
     }
 
     pub(crate) fn flush<W: Write>(&mut self, type_id: TypeId, mut writer: Writer<W>) -> Result<(), Error> {
-        let mut wire_type_ctx = SerializationCtx::new();
-        let mut last_sent_type_id = self.schema.last_sent_type_id;
-        for wire_type in self.schema.types.custom(last_sent_type_id) {
-            {
-                let ser = FieldValueSerializer {
-                    ctx: wire_type_ctx,
-                    type_id: TypeId::WIRE_TYPE
-                };
-                let ok = wire_type.serialize(ser)?;
-                wire_type_ctx = ok.ctx;
-            }
-            writer.write_section(-wire_type.common().id.0,
-                wire_type_ctx.value.get_ref())?;
-            wire_type_ctx.value.get_mut().clear();
-            last_sent_type_id = Some(wire_type.common().id);
-        }
-        self.schema.last_sent_type_id = last_sent_type_id;
+        self.schema.write_pending(writer.borrow_mut())?;
         writer.write_section(type_id.0,
             self.value.get_ref())?;
         Ok(())

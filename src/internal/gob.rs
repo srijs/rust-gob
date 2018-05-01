@@ -25,6 +25,10 @@ impl<B> Message<B> {
     pub fn get_mut(&mut self) -> &mut B {
         &mut self.buf
     }
+
+    pub fn into_inner(self) -> B {
+        self.buf
+    }
 }
 
 impl<B: Buf> Message<B> {
@@ -134,6 +138,10 @@ pub(crate) struct Writer<W> {
 impl<W> Writer<W> {
     pub fn new(inner: W) -> Writer<W> {
         Writer { inner }
+    }
+
+    pub fn borrow_mut(&mut self) -> Writer<&mut W> {
+        Writer::new(self.get_mut())
     }
 
     pub fn get_ref(&self) -> &W {

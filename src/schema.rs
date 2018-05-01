@@ -2,16 +2,19 @@
 
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::io::Write;
 
 use serde::de::value::Error;
 use serde::{Deserialize, Deserializer};
 use serde::{Serialize, Serializer};
 
+use ::internal::gob::{Message, Writer};
 use ::internal::types::{Types, WireType, CommonType, StructType, FieldType, ArrayType, SliceType, MapType};
+use ::internal::ser::{SerializationCtx, FieldValueSerializer};
 
 pub struct Schema {
     pub(crate) types: Types,
-    pub(crate) last_sent_type_id: Option<TypeId>,
+    pending_wire_types: Vec<(TypeId, Vec<u8>)>,
     schema_types: HashMap<::serde_schema::Type<TypeId>, TypeId>
 }
 
@@ -19,9 +22,28 @@ impl Schema {
     pub fn new() -> Schema {
         Schema {
             types: Types::new(),
-            last_sent_type_id: None,
+            pending_wire_types: Vec::new(),
             schema_types: HashMap::new()
         }
+    }
+
+    pub(crate) fn write_pending<W: Write>(&mut self, mut out: Writer<W>) -> Result<(), Error> {
+        for (type_id, wire_type_buffer) in self.pending_wire_types.drain(..) {
+            out.write_section(-type_id.0, &wire_type_buffer)?;
+        }
+        Ok(())
+    }
+
+    fn queue_wire_type(&mut self, wire_type: &WireType) -> Result<(), Error> {
+        let mut wire_type_ctx = SerializationCtx::new();
+        let ser = FieldValueSerializer {
+            ctx: wire_type_ctx,
+            type_id: TypeId::WIRE_TYPE
+        };
+        let ok = wire_type.serialize(ser)?;
+        self.pending_wire_types.push(
+            (wire_type.common().id, ok.ctx.value.into_inner()));
+        Ok(())
     }
 }
 
@@ -64,6 +86,8 @@ impl ::serde_schema::Schema for Schema {
                 return Err(::serde::de::Error::custom("unsupported type"));
             }
         };
+
+        self.queue_wire_type(&wire_type)?;
         self.types.insert(wire_type);
         self.schema_types.insert(ty, id);
         Ok(id)
