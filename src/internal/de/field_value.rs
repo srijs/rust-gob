@@ -9,8 +9,7 @@ use ::internal::gob::Message;
 use ::internal::types::{TypeId, Types, WireType};
 
 use super::struct_value::StructValueDeserializer;
-use super::slice_value::SliceValueDeserializer;
-use super::array_value::ArrayValueDeserializer;
+use super::seq_value::SeqValueDeserializer;
 use super::map_value::MapValueDeserializer;
 use super::complex_value::ComplexValueDeserializer;
 
@@ -66,11 +65,11 @@ impl<'t, 'de> serde::Deserializer<'de> for FieldValueDeserializer<'t, 'de> {
                             de.deserialize_any(visitor)
                         },
                         &WireType::Slice(ref slice_type) => {
-                            let de = SliceValueDeserializer::new(slice_type, self.defs, self.msg);
+                            let de = SeqValueDeserializer::new(None, slice_type.elem, self.defs, self.msg);
                             de.deserialize_any(visitor)
                         },
                         &WireType::Array(ref array_type) => {
-                            let de = ArrayValueDeserializer::new(array_type, self.defs, self.msg);
+                            let de = SeqValueDeserializer::new(Some(array_type.len as usize), array_type.elem, self.defs, self.msg);
                             de.deserialize_any(visitor)
                         },
                         &WireType::Map(ref map_type) => {

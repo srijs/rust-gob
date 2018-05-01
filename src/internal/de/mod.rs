@@ -3,8 +3,7 @@ use serde::de::value::Error;
 
 mod field_value;
 mod struct_value;
-mod slice_value;
-mod array_value;
+mod seq_value;
 mod map_value;
 mod complex_value;
 mod value;
