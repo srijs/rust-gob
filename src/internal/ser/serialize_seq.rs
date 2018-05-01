@@ -1,5 +1,6 @@
 use serde::ser::{self, Serialize};
 use serde::de::value::Error;
+use serde_schema::Type;
 
 use ::internal::types::{TypeId, WireType};
 
@@ -14,17 +15,14 @@ pub(crate) struct SerializeSeqValue<'t> {
 }
 
 impl<'t> SerializeSeqValue<'t> {
-    pub(crate) fn new(ctx: SerializationCtx<'t>, len: Option<usize>, type_id: TypeId) -> Result<Self, Error> {
-        let (len, id, elem) = match ctx.schema.types.lookup(type_id) {
-            Some(&WireType::Slice(ref slice_type)) => {
-                if let Some(len) = len {
-                    (len, slice_type.common.id, slice_type.elem)
+    pub(crate) fn new(ctx: SerializationCtx<'t>, ser_len: Option<usize>, type_id: TypeId) -> Result<Self, Error> {
+        let (len, elem) = match ctx.schema.lookup(type_id) {
+            Some(&Type::Seq { len: seq_len, element }) => {
+                if let Some(len) = seq_len.or(ser_len) {
+                    (len, element)
                 } else {
                     return Err(ser::Error::custom("sequences without known length not supported"));
                 }
-            },
-            Some(&WireType::Array(ref array_type)) => {
-                (array_type.len as usize, array_type.common.id, array_type.elem)
             },
             _ => {
                 return Err(ser::Error::custom("schema mismatch, not a sequence"));
@@ -34,7 +32,7 @@ impl<'t> SerializeSeqValue<'t> {
         Ok(SerializeSeqValue {
             needs_init: true,
             ctx,
-            type_id: id,
+            type_id,
             len,
             elem
         })

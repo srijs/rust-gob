@@ -3,7 +3,9 @@ use std::fmt;
 
 use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Visitor, MapAccess};
+use serde::de::value::Error;
 use serde::ser::SerializeStruct;
+use serde_schema::{Type, StructField};
 
 use super::{ArrayType, CommonType, SliceType, StructType, MapType, FieldType, TypeId};
 
@@ -15,16 +17,16 @@ pub enum WireType {
     Map(MapType)
 }
 
-pub static WIRE_TYPE_DEF: WireType = {
-    WireType::Struct(StructType {
-        common: CommonType { name: Cow::Borrowed("WireType"), id: TypeId::WIRE_TYPE },
+pub static WIRE_TYPE_DEF: Type<TypeId> = {
+    Type::Struct {
+        name: Cow::Borrowed("WireType"),
         fields: Cow::Borrowed(&[
-            FieldType { name: Cow::Borrowed("ArrayT"), id: TypeId::ARRAY_TYPE },
-            FieldType { name: Cow::Borrowed("SliceT"), id: TypeId::SLICE_TYPE },
-            FieldType { name: Cow::Borrowed("StructT"), id: TypeId::STRUCT_TYPE },
-            FieldType { name: Cow::Borrowed("MapT"), id: TypeId::MAP_TYPE },
+            StructField { name: Cow::Borrowed("ArrayT"), id: TypeId::ARRAY_TYPE },
+            StructField { name: Cow::Borrowed("SliceT"), id: TypeId::SLICE_TYPE },
+            StructField { name: Cow::Borrowed("StructT"), id: TypeId::STRUCT_TYPE },
+            StructField { name: Cow::Borrowed("MapT"), id: TypeId::MAP_TYPE },
         ])
-    })
+    }
 };
 
 impl WireType {
@@ -43,6 +45,72 @@ impl WireType {
             &mut WireType::Slice(ref mut inner) => &mut inner.common,
             &mut WireType::Struct(ref mut inner) => &mut inner.common,
             &mut WireType::Map(ref mut inner) => &mut inner.common
+        }
+    }
+
+    pub fn to_type(&self) -> Type<TypeId> {
+        match self {
+            &WireType::Array(ref array_type) => {
+                Type::Seq {
+                    len: Some(array_type.len as usize),
+                    element: array_type.elem
+                }
+            },
+            &WireType::Slice(ref slice_type) => {
+                Type::Seq {
+                    len: None,
+                    element: slice_type.elem
+                }
+            },
+            &WireType::Struct(ref struct_type) => {
+                Type::Struct {
+                    name: struct_type.common.name.to_owned(),
+                    fields: Cow::Owned(struct_type.fields.iter().map(|field| {
+                        StructField {
+                            name: field.name.to_owned(),
+                            id: field.id
+                        }
+                    }).collect())
+                }
+            },
+            &WireType::Map(ref map_type) => {
+                Type::Map {
+                    key: map_type.key,
+                    value: map_type.elem
+                }
+            }
+        }
+    }
+
+    pub fn from_type(id: TypeId, ty: &Type<TypeId>) -> Result<WireType, Error> {
+        match ty {
+            &Type::Struct { ref name, ref fields } => {
+                Ok(WireType::Struct(StructType {
+                    common: CommonType { name: name.clone(), id },
+                    fields: fields.iter().map(|field| {
+                        FieldType {
+                            name: field.name.to_owned(),
+                            id: field.id
+                        }
+                    }).collect()
+                }))
+            },
+            &Type::Seq { len: Some(len), element } => {
+                Ok(WireType::Array(ArrayType {
+                    common: CommonType { name: Cow::Borrowed(""), id },
+                    len: len as i64,
+                    elem: element
+                }))
+            },
+            &Type::Seq { len: None, element } => {
+                Ok(WireType::Slice(SliceType {
+                    common: CommonType { name: Cow::Borrowed(""), id },
+                    elem: element
+                }))
+            },
+            _ => {
+                return Err(::serde::de::Error::custom("unsupported type"));
+            }
         }
     }
 }

@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use serde_schema::{Type, StructField};
+
 use super::{CommonType, TypeId, StructType, FieldType, WireType};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -11,13 +13,13 @@ pub struct MapType {
     pub elem: TypeId
 }
 
-pub static MAP_TYPE_DEF: WireType = {
-    WireType::Struct(StructType {
-        common: CommonType { name: Cow::Borrowed("MapType"), id: TypeId::MAP_TYPE },
+pub static MAP_TYPE_DEF: Type<TypeId> = {
+    Type::Struct {
+        name: Cow::Borrowed("MapType"),
         fields: Cow::Borrowed(&[
-            FieldType { name: Cow::Borrowed("common"), id: TypeId::COMMON_TYPE },
-            FieldType { name: Cow::Borrowed("Key"), id: TypeId::INT },
-            FieldType { name: Cow::Borrowed("Elem"), id: TypeId::INT }
+            StructField { name: Cow::Borrowed("common"), id: TypeId::COMMON_TYPE },
+            StructField { name: Cow::Borrowed("Key"), id: TypeId::INT },
+            StructField { name: Cow::Borrowed("Elem"), id: TypeId::INT }
         ])
-    })
+    }
 };

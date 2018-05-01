@@ -14,7 +14,6 @@ use ::internal::types::{Types, WireType, CommonType, StructType, FieldType, Arra
 use ::internal::ser::{SerializationCtx, FieldValueSerializer};
 
 pub struct Schema {
-    pub(crate) types: Types,
     pending_wire_types: Vec<(TypeId, Vec<u8>)>,
     schema_types: UniqVec<::serde_schema::Type<TypeId>>
 }
@@ -22,10 +21,14 @@ pub struct Schema {
 impl Schema {
     pub fn new() -> Schema {
         Schema {
-            types: Types::new(),
             pending_wire_types: Vec::new(),
             schema_types: UniqVec::new()
         }
+    }
+
+    pub(crate) fn lookup(&self, id: TypeId) -> Option<&::serde_schema::Type<TypeId>> {
+        ::internal::types::lookup_builtin(id).or_else(||
+            self.schema_types.get(id.to_vec_idx()))
     }
 
     pub(crate) fn write_pending<W: Write>(&mut self, mut out: Writer<W>) -> Result<(), Error> {
@@ -36,7 +39,7 @@ impl Schema {
     }
 
     fn queue_wire_type(&mut self, wire_type: &WireType) -> Result<(), Error> {
-        let mut wire_type_ctx = SerializationCtx::new();
+        let wire_type_ctx = SerializationCtx::new();
         let ser = FieldValueSerializer {
             ctx: wire_type_ctx,
             type_id: TypeId::WIRE_TYPE
@@ -53,35 +56,7 @@ impl ::serde_schema::Schema for Schema {
     type Error = Error;
 
     fn register_type(&mut self, ty: ::serde_schema::Type<TypeId>) -> Result<TypeId, Error> {
-        let mut wire_type = match ty {
-            ::serde_schema::Type::Struct { ref name, ref fields } => {
-                WireType::Struct(StructType {
-                    common: CommonType { name: name.clone(), id: TypeId(0) },
-                    fields: fields.iter().map(|field| {
-                        FieldType {
-                            name: field.name.to_owned(),
-                            id: field.id
-                        }
-                    }).collect()
-                })
-            },
-            ::serde_schema::Type::Seq { len: Some(len), element } => {
-                WireType::Array(ArrayType {
-                    common: CommonType { name: Cow::Borrowed(""), id: TypeId(0) },
-                    len: len as i64,
-                    elem: element
-                })
-            },
-            ::serde_schema::Type::Seq { len: None, element } => {
-                WireType::Slice(SliceType {
-                    common: CommonType { name: Cow::Borrowed(""), id: TypeId(0) },
-                    elem: element
-                })
-            },
-            _ => {
-                return Err(::serde::de::Error::custom("unsupported type"));
-            }
-        };
+        let mut wire_type = WireType::from_type(TypeId(0), &ty)?;
 
         let (idx, new) = self.schema_types.push(ty);
         let id = TypeId::from_vec_idx(idx);
@@ -89,7 +64,6 @@ impl ::serde_schema::Schema for Schema {
         if new {
             wire_type.common_mut().id = id;
             self.queue_wire_type(&wire_type)?;
-            self.types.insert(wire_type);
         }
 
         Ok(id)

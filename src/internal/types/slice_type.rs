@@ -1,5 +1,7 @@
 use std::borrow::Cow;
 
+use serde_schema::{Type, StructField};
+
 use super::{CommonType, TypeId, StructType, FieldType, WireType};
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
@@ -9,12 +11,12 @@ pub struct SliceType {
     pub elem: TypeId
 }
 
-pub static SLICE_TYPE_DEF: WireType = {
-    WireType::Struct(StructType {
-        common: CommonType { name: Cow::Borrowed("SliceType"), id: TypeId::SLICE_TYPE },
+pub static SLICE_TYPE_DEF: Type<TypeId> = {
+    Type::Struct {
+        name: Cow::Borrowed("SliceType"),
         fields: Cow::Borrowed(&[
-            FieldType { name: Cow::Borrowed("common"), id: TypeId::COMMON_TYPE },
-            FieldType { name: Cow::Borrowed("Elem"), id: TypeId::INT }
+            StructField { name: Cow::Borrowed("common"), id: TypeId::COMMON_TYPE },
+            StructField { name: Cow::Borrowed("Elem"), id: TypeId::INT }
         ])
-    })
+    }
 };
