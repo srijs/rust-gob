@@ -48,40 +48,6 @@ impl WireType {
         }
     }
 
-    pub fn to_type(&self) -> Type<TypeId> {
-        match self {
-            &WireType::Array(ref array_type) => {
-                Type::Seq {
-                    len: Some(array_type.len as usize),
-                    element: array_type.elem
-                }
-            },
-            &WireType::Slice(ref slice_type) => {
-                Type::Seq {
-                    len: None,
-                    element: slice_type.elem
-                }
-            },
-            &WireType::Struct(ref struct_type) => {
-                Type::Struct {
-                    name: struct_type.common.name.to_owned(),
-                    fields: Cow::Owned(struct_type.fields.iter().map(|field| {
-                        StructField {
-                            name: field.name.to_owned(),
-                            id: field.id
-                        }
-                    }).collect())
-                }
-            },
-            &WireType::Map(ref map_type) => {
-                Type::Map {
-                    key: map_type.key,
-                    value: map_type.elem
-                }
-            }
-        }
-    }
-
     pub fn from_type(id: TypeId, ty: &Type<TypeId>) -> Result<WireType, Error> {
         match ty {
             &Type::Struct { ref name, ref fields } => {
