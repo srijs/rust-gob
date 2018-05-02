@@ -19,7 +19,7 @@ impl<'t> SerializeNewtypeVariantValue<'t> {
                 if let Some(&EnumVariant::Newtype { value, .. }) = variants.get(variant_idx as usize) {
                     value
                 } else {
-                    return Err(ser::Error::custom("sequences without known length not supported"));
+                    return Err(ser::Error::custom("unsupported enum variant type"));
                 }
             },
             _ => {
