@@ -5,7 +5,7 @@ extern crate serde_bytes;
 extern crate serde_schema;
 
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 
 use gob::StreamSerializer;
 use serde_bytes::Bytes;
@@ -363,7 +363,7 @@ fn map_empty() {
     let mut buffer = Vec::new();
     {
         let mut stream = StreamSerializer::new(&mut buffer);
-        stream.serialize(&<HashMap<String, bool>>::new()).unwrap();
+        stream.serialize(&<BTreeMap<String, bool>>::new()).unwrap();
     }
     assert_eq!(buffer,
         &[14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 4, 255, 130, 0, 0]);
@@ -374,14 +374,13 @@ fn map_non_empty() {
     let mut buffer = Vec::new();
     {
         let mut stream = StreamSerializer::new(&mut buffer);
-        let mut map = HashMap::new();
+        let mut map = BTreeMap::new();
         map.insert("foo", true);
         map.insert("bar", false);
         stream.serialize(&map).unwrap();
     }
     assert_eq!(buffer,
-        &[14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 14, 255, 130,
-          0, 2, 3, 102, 111, 111, 1, 3, 98, 97, 114, 0]);
+        &[14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 14, 255, 130, 0, 2, 3, 98, 97, 114, 0, 3, 102, 111, 111, 1]);
 }
 
 #[test]
