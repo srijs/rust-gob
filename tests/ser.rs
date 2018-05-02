@@ -383,26 +383,26 @@ fn map_non_empty() {
         &[14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 14, 255, 130, 0, 2, 3, 98, 97, 114, 0, 3, 102, 111, 111, 1]);
 }
 
+#[derive(Serialize)]
+struct Point {
+    #[serde(rename = "X")] x: i64,
+    #[serde(rename = "Y")] y: i64
+}
+
+impl SchemaSerialize for Point {
+    fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
+        schema.register_type(Type::Struct {
+            name: Cow::Borrowed("Point"),
+            fields: Cow::Owned(vec![
+                StructField { name: Cow::Borrowed("X"), id: TypeId::I64 },
+                StructField { name: Cow::Borrowed("Y"), id: TypeId::I64 },
+            ])
+        })
+    }
+}
+
 #[test]
 fn point_struct() {
-    #[derive(Serialize)]
-    struct Point {
-        #[serde(rename = "X")] x: i64,
-        #[serde(rename = "Y")] y: i64
-    }
-
-    impl SchemaSerialize for Point {
-        fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-            schema.register_type(Type::Struct {
-                name: Cow::Borrowed("Point"),
-                fields: Cow::Owned(vec![
-                    StructField { name: Cow::Borrowed("X"), id: TypeId::I64 },
-                    StructField { name: Cow::Borrowed("Y"), id: TypeId::I64 },
-                ])
-            })
-        }
-    }
-
     let mut buffer = Vec::new();
     {
         let mut stream = StreamSerializer::new(&mut buffer);
@@ -414,6 +414,20 @@ fn point_struct() {
         0x01, 0x02, 0x01, 0x01, 0x58, 0x01, 0x04, 0x00,
         0x01, 0x01, 0x59, 0x01, 0x04, 0x00, 0x00, 0x00,
         0x07, 0xff, 0x82, 0x01, 0x2c, 0x01, 0x42, 0x00
+    ].as_ref());
+}
+
+#[test]
+fn point_struct_skip_x() {
+    let mut buffer = Vec::new();
+    {
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(&Point { x: 0, y: 42 }).unwrap();
+    }
+    assert_eq!(buffer, [
+        31, 255, 129, 3, 1, 1, 5, 80, 111, 105, 110, 116, 1, 255,
+        130, 0, 1, 2, 1, 1, 88, 1, 4, 0, 1, 1, 89, 1, 4, 0, 0, 0,
+        5, 255, 130, 2, 84, 0
     ].as_ref());
 }
 

@@ -31,6 +31,10 @@ impl<'t, W: Write> ser::SerializeStruct for SerializeStruct<'t, W> {
         self.inner.serialize_field(key, value)
     }
 
+    fn skip_field(&mut self, key: &'static str) -> Result<(), Error> {
+        self.inner.skip_field(key)
+    }
+
     fn end(self) -> Result<Self::Ok, Self::Error> {
         let type_id = self.inner.type_id();
         let mut ok = self.inner.end()?;
