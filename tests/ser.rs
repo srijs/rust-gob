@@ -448,3 +448,47 @@ fn enum_with_newtype_variants_and_external_tags() {
         130, 2, 84, 0
     ].as_ref());
 }
+
+#[test]
+fn enum_with_struct_variants_and_external_tags() {
+    #[derive(Serialize)]
+    enum Enum {
+        V1 { #[serde(rename="Foo")] foo: bool },
+        V2 { #[serde(rename="Bar")] bar: i64, #[serde(rename="Baz")] baz: u64 },
+        V3 { #[serde(rename="Quux")] quux: String }
+    }
+
+    impl SchemaSerialize for Enum {
+        fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
+            schema.register_type(Type::build().enum_type("Enum", 3)
+                .struct_variant("V1", 1)
+                    .field("Foo", TypeId::BOOL)
+                    .end()
+                .struct_variant("V2", 2)
+                    .field("Bar", TypeId::I64)
+                    .field("Baz", TypeId::U64)
+                    .end()
+                .struct_variant("V3", 1)
+                    .field("Quux", TypeId::STR)
+                    .end()
+                .end())
+        }
+    }
+
+    let mut buffer = Vec::new();
+    {
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(&Enum::V2 { bar: 42, baz: 1234 }).unwrap();
+    }
+    assert_eq!(buffer, [
+        42, 255, 129, 3, 1, 1, 4, 69, 110, 117, 109, 1, 255, 130, 0,
+        1, 3, 1, 2, 86, 49, 1, 255, 132, 0, 1, 2, 86, 50, 1, 255, 134,
+        0, 1, 2, 86, 51, 1, 255, 136, 0, 0, 0, 24, 255, 131, 3, 1, 1,
+        2, 86, 49, 1, 255, 132, 0, 1, 1, 1, 3, 70, 111, 111, 1, 2, 0,
+        0, 0, 32, 255, 133, 3, 1, 1, 2, 86, 50, 1, 255, 134, 0, 1, 2,
+        1, 3, 66, 97, 114, 1, 4, 0, 1, 3, 66, 97, 122, 1, 6, 0, 0, 0,
+        25, 255, 135, 3, 1, 1, 2, 86, 51, 1, 255, 136, 0, 1, 1, 1, 4,
+        81, 117, 117, 120, 1, 12, 0, 0, 0, 11, 255, 130, 2, 1, 84, 1,
+        254, 4, 210, 0, 0
+    ].as_ref());
+}

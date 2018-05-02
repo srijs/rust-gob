@@ -57,14 +57,18 @@ impl ::serde_schema::Schema for Schema {
     type Error = Error;
 
     fn register_type(&mut self, ty: Type<TypeId>) -> Result<TypeId, Error> {
-        let mut wire_type = WireType::from_type(TypeId(0), &ty)?;
+        let next_id = TypeId::from_vec_idx(self.schema_types.len());
+        let mut other_wire_types = Vec::new();
+        let wire_type = WireType::convert(next_id, &ty, &mut other_wire_types)?;
 
-        let (idx, new) = self.schema_types.push(ty);
+        let (idx, new) = self.schema_types.push(ty, 1 + other_wire_types.len());
         let id = TypeId::from_vec_idx(idx);
 
         if new {
-            wire_type.common_mut().id = id;
-            self.queue_wire_type(&wire_type)?;
+            self.queue_wire_type(&wire_type);
+            for other_wire_type in other_wire_types {
+                self.queue_wire_type(&other_wire_type)?;
+            }
         }
 
         Ok(id)
@@ -98,6 +102,10 @@ impl TypeId {
 
     fn to_vec_idx(&self) -> usize {
         self.0 as usize - 65
+    }
+
+    pub(crate) fn next(&self) -> TypeId {
+        TypeId(self.0 + 1)
     }
 }
 

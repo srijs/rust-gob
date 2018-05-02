@@ -21,3 +21,13 @@ pub static COMMON_TYPE_DEF: Type<TypeId> = {
         ])
     }
 };
+
+pub static COMMON_TYPE_DEF_2: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("CommonType"), id: TypeId::COMMON_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("Name"), id: TypeId::STRING },
+            FieldType { name: Cow::Borrowed("Id"), id: TypeId::INT }
+        ])
+    })
+};

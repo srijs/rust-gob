@@ -8,6 +8,7 @@ use smallvec::SmallVec;
 
 pub struct UniqVec<V, S = RandomState> {
     values: Vec<V>,
+    next_idx: usize,
     lookup: HashMap<u64, SmallVec<[usize; 4]>>,
     state: S
 }
@@ -16,6 +17,7 @@ impl<V: Eq + Hash> UniqVec<V, RandomState> {
     pub fn new() -> UniqVec<V, RandomState> {
         UniqVec {
             values: Vec::new(),
+            next_idx: 0,
             lookup: HashMap::new(),
             state: RandomState::new()
         }
@@ -23,10 +25,10 @@ impl<V: Eq + Hash> UniqVec<V, RandomState> {
 }
 
 impl<V: Eq + Hash, S: BuildHasher> UniqVec<V, S> {
-    pub fn push(&mut self, v: V) -> (usize, bool) {
+    pub fn push(&mut self, v: V, width: usize) -> (usize, bool) {
         use std::collections::hash_map::Entry;
 
-        let idx = self.values.len();
+        let idx = self.next_idx;
 
         let mut hasher = self.state.build_hasher();
         v.hash(&mut hasher);
@@ -40,15 +42,15 @@ impl<V: Eq + Hash, S: BuildHasher> UniqVec<V, S> {
                         return (*idx, false);
                     }
                 }
-                let idx = self.values.len();
-                self.values.push(v);
                 idxs.push(idx);
+                self.values.push(v);
+                self.next_idx += width;
                 return (idx, true);
             },
             Entry::Vacant(entry) => {
-                let idx = self.values.len();
-                self.values.push(v);
                 entry.insert(SmallVec::new()).push(idx);
+                self.values.push(v);
+                self.next_idx += width;
                 return (idx, true);
             }
         }

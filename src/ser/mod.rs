@@ -9,7 +9,11 @@ use serde_schema::SchemaSerialize;
 
 use ::internal::utils::Bow;
 use ::internal::gob::Writer;
-use ::internal::ser::{SerializationCtx, FieldValueSerializer};
+use ::internal::ser::{
+    SerializationCtx,
+    FieldValueSerializer,
+    SerializeVariantValue
+};
 
 pub use ::schema::{Schema, TypeId};
 
@@ -21,6 +25,8 @@ mod serialize_tuple;
 pub use self::serialize_tuple::SerializeTuple;
 mod serialize_map;
 pub use self::serialize_map::SerializeMap;
+mod serialize_struct_variant;
+pub use self::serialize_struct_variant::SerializeStructVariant;
 
 /// Serializes a single value.
 pub struct Serializer<'t, W> {
@@ -110,7 +116,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
     type SerializeMap = SerializeMap<'t, W>;
     type SerializeStruct = SerializeStruct<'t, W>;
-    type SerializeStructVariant = Impossible<Self::Ok, Self::Error>;
+    type SerializeStructVariant = SerializeStructVariant<'t, W>;
 
     fn serialize_bool(mut self, v: bool) -> Result<Self::Ok, Self::Error> {
         self.ctx.value.write_uint(0)?;
@@ -285,6 +291,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     }
 
     fn serialize_struct_variant(self, name: &'static str, variant_index: u32, variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+        let inner = SerializeVariantValue::new(self.ctx, self.type_id, variant_index)?.serialize_struct()?;
+        SerializeStructVariant::new(inner, self.out)
     }
 }

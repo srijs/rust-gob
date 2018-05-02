@@ -23,3 +23,14 @@ pub static MAP_TYPE_DEF: Type<TypeId> = {
         ])
     }
 };
+
+pub static MAP_TYPE_DEF_2: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("MapType"), id: TypeId::MAP_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("common"), id: TypeId::COMMON_TYPE },
+            FieldType { name: Cow::Borrowed("Key"), id: TypeId::INT },
+            FieldType { name: Cow::Borrowed("Elem"), id: TypeId::INT }
+        ])
+    })
+};

@@ -22,6 +22,16 @@ pub static STRUCT_TYPE_DEF: Type<TypeId> = {
     }
 };
 
+pub static STRUCT_TYPE_DEF_2: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("StructType"), id: TypeId::STRUCT_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("common"), id: TypeId::COMMON_TYPE },
+            FieldType { name: Cow::Borrowed("Fields"), id: TypeId::FIELD_TYPE_SLICE }
+        ])
+    })
+};
+
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct FieldType {
     // the name of the field
@@ -42,9 +52,26 @@ pub static FIELD_TYPE_DEF: Type<TypeId> = {
     }
 };
 
+pub static FIELD_TYPE_DEF_2: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("FieldType"), id: TypeId::FIELD_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("Name"), id: TypeId::STRING },
+            FieldType { name: Cow::Borrowed("Id"), id: TypeId::INT }
+        ])
+    })
+};
+
 pub static FIELD_TYPE_SLICE_DEF: Type<TypeId> = {
     Type::Seq {
         len: None,
         element: TypeId::FIELD_TYPE
     }
+};
+
+pub static FIELD_TYPE_SLICE_DEF_2: WireType = {
+    WireType::Slice(SliceType {
+        common: CommonType { name: Cow::Borrowed(""), id: TypeId::FIELD_TYPE_SLICE },
+        elem: TypeId::FIELD_TYPE
+    })
 };

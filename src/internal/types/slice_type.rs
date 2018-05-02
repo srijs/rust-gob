@@ -20,3 +20,13 @@ pub static SLICE_TYPE_DEF: Type<TypeId> = {
         ])
     }
 };
+
+pub static SLICE_TYPE_DEF_2: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("SliceType"), id: TypeId::SLICE_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("common"), id: TypeId::COMMON_TYPE },
+            FieldType { name: Cow::Borrowed("Elem"), id: TypeId::INT }
+        ])
+    })
+};

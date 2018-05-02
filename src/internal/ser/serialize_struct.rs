@@ -22,13 +22,15 @@ impl<'t> SerializeStructValue<'t> {
         } else {
             return Err(ser::Error::custom("schema mismatch, not a struct"));
         }
-        Ok(SerializeStructValue {
-            ctx,
-            type_id,
-            fields: struct_fields,
+        Ok(SerializeStructValue::from_parts(ctx, type_id, struct_fields))
+    }
+
+    pub(crate) fn from_parts(ctx: SerializationCtx<'t>, type_id: TypeId, fields: Vec<StructField<TypeId>>) -> Self {
+        SerializeStructValue {
+            ctx, type_id, fields,
             current_field_idx: 0,
             last_serialized_field_idx: -1
-        })
+        }
     }
 
     pub(crate) fn type_id(&self) -> TypeId {

@@ -19,7 +19,10 @@ pub(crate) use self::serialize_tuple::SerializeTupleValue;
 mod serialize_map;
 pub(crate) use self::serialize_map::SerializeMapValue;
 mod serialize_variant;
-use self::serialize_variant::SerializeNewtypeVariantValue;
+pub(crate) use self::serialize_variant::{
+    SerializeVariantValue,
+    SerializeStructVariantValue
+};
 
 pub(crate) struct SerializationOk<'t> {
     pub ctx: SerializationCtx<'t>,
@@ -77,7 +80,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
     type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
     type SerializeMap = SerializeMapValue<'t>;
     type SerializeStruct = SerializeStructValue<'t>;
-    type SerializeStructVariant = Impossible<Self::Ok, Self::Error>;
+    type SerializeStructVariant = SerializeStructVariantValue<'t>;
 
     #[inline]
     fn serialize_bool(mut self, v: bool) -> Result<Self::Ok, Self::Error> {
@@ -197,8 +200,8 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
     fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, variant_index: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
-        let ser = SerializeNewtypeVariantValue::new(self.ctx, self.type_id, variant_index)?;
-        ser.serialize_value(value)
+        let ser = SerializeVariantValue::new(self.ctx, self.type_id, variant_index)?;
+        ser.serialize_newtype(value)
     }
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
@@ -225,7 +228,8 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         SerializeStructValue::new(self.ctx, self.type_id)
     }
 
-    fn serialize_struct_variant(self, name: &'static str, variant_index: u32, variant: &'static str, len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+    fn serialize_struct_variant(self, _name: &'static str, variant_index: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
+        let ser = SerializeVariantValue::new(self.ctx, self.type_id, variant_index)?;
+        ser.serialize_struct()
     }
 }

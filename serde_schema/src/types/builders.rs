@@ -154,16 +154,16 @@ impl<T: TypeId> EnumBuilder<T> {
     }
 
     #[inline]
-    pub fn tuple_variant(self, name: &'static str) -> TupleVariantBuilder<T> {
+    pub fn tuple_variant(self, name: &'static str, len: usize) -> TupleVariantBuilder<T> {
         TupleVariantBuilder {
-            name, elements: vec![], enum_builder: self
+            name, elements: Vec::with_capacity(len), enum_builder: self
         }
     }
 
     #[inline]
-    pub fn struct_variant(self, name: &'static str) -> StructVariantBuilder<T> {
+    pub fn struct_variant(self, name: &'static str, len: usize) -> StructVariantBuilder<T> {
         StructVariantBuilder {
-            name, fields: vec![], enum_builder: self
+            name, fields: Vec::with_capacity(len), enum_builder: self
         }
     }
 

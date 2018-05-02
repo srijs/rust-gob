@@ -33,6 +33,19 @@ pub static WIRE_TYPE_DEF: Type<TypeId> = {
     }
 };
 
+pub static WIRE_TYPE_DEF_2: WireType = {
+    WireType::Struct(StructType {
+        common: CommonType { name: Cow::Borrowed("WireType"), id: TypeId::WIRE_TYPE },
+        fields: Cow::Borrowed(&[
+            FieldType { name: Cow::Borrowed("ArrayT"), id: TypeId::ARRAY_TYPE },
+            FieldType { name: Cow::Borrowed("SliceT"), id: TypeId::SLICE_TYPE },
+            FieldType { name: Cow::Borrowed("StructT"), id: TypeId::STRUCT_TYPE },
+            FieldType { name: Cow::Borrowed("MapT"), id: TypeId::MAP_TYPE },
+        ])
+    })
+};
+
+
 impl WireType {
     pub fn common(&self) -> &CommonType {
         match self {
@@ -43,16 +56,7 @@ impl WireType {
         }
     }
 
-    pub fn common_mut(&mut self) -> &mut CommonType {
-        match self {
-            &mut WireType::Array(ref mut inner) => &mut inner.common,
-            &mut WireType::Slice(ref mut inner) => &mut inner.common,
-            &mut WireType::Struct(ref mut inner) => &mut inner.common,
-            &mut WireType::Map(ref mut inner) => &mut inner.common
-        }
-    }
-
-    pub fn from_type(id: TypeId, ty: &Type<TypeId>) -> Result<WireType, Error> {
+    pub fn convert(mut id: TypeId, ty: &Type<TypeId>, tys: &mut Vec<WireType>) -> Result<WireType, Error> {
         match ty {
             &Type::Struct { ref name, ref fields } => {
                 Ok(WireType::Struct(StructType {
@@ -86,12 +90,29 @@ impl WireType {
                 }))
             },
             &Type::Enum { ref name, ref variants } => {
+                let mut inner_id = id.next();
                 let fields = variants.iter().map(|variant| {
                     match variant {
-                        &EnumVariant::Newtype { ref name, value } =>
-                            Ok(FieldType { name: name.to_owned(), id: value }),
-                        _ =>
+                        &EnumVariant::Newtype { ref name, value } => {
+                            Ok(FieldType { name: name.to_owned(), id: value })
+                        },
+                        &EnumVariant::Struct { ref name, ref fields } => {
+                            let variant_id = inner_id;
+                            inner_id = inner_id.next();
+                            tys.push(WireType::Struct(StructType {
+                                common: CommonType { name: name.clone(), id: variant_id },
+                                fields: fields.iter().map(|field| {
+                                    FieldType {
+                                        name: field.name.to_owned(),
+                                        id: field.id
+                                    }
+                                }).collect()
+                            }));
+                            Ok(FieldType { name: name.to_owned(), id: variant_id })
+                        },
+                        _ => {
                             Err(::serde::de::Error::custom("unsupported variant type"))
+                        }
                     }
                 }).collect::<Result<_, Error>>()?;
                 Ok(WireType::Struct(StructType {
