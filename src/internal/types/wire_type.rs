@@ -5,11 +5,11 @@ use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Visitor, MapAccess};
 use serde::de::value::Error;
 use serde::ser::SerializeStruct;
-use serde_schema::types::{Type, StructField};
+use serde_schema::types::{Type, StructField, EnumVariant};
 
 use super::{ArrayType, CommonType, SliceType, StructType, MapType, FieldType, TypeId};
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
 pub enum WireType {
     Array(ArrayType),
     Slice(SliceType),
@@ -18,13 +18,13 @@ pub enum WireType {
 }
 
 pub static WIRE_TYPE_DEF: Type<TypeId> = {
-    Type::Struct {
+    Type::Enum {
         name: Cow::Borrowed("WireType"),
-        fields: Cow::Borrowed(&[
-            StructField { name: Cow::Borrowed("ArrayT"), id: TypeId::ARRAY_TYPE },
-            StructField { name: Cow::Borrowed("SliceT"), id: TypeId::SLICE_TYPE },
-            StructField { name: Cow::Borrowed("StructT"), id: TypeId::STRUCT_TYPE },
-            StructField { name: Cow::Borrowed("MapT"), id: TypeId::MAP_TYPE },
+        variants: Cow::Borrowed(&[
+            EnumVariant::Newtype { name: Cow::Borrowed("ArrayT"), value: TypeId::ARRAY_TYPE },
+            EnumVariant::Newtype { name: Cow::Borrowed("SliceT"), value: TypeId::SLICE_TYPE },
+            EnumVariant::Newtype { name: Cow::Borrowed("StructT"), value: TypeId::STRUCT_TYPE },
+            EnumVariant::Newtype { name: Cow::Borrowed("MapT"), value: TypeId::MAP_TYPE },
         ])
     }
 };
@@ -115,43 +115,24 @@ impl WireType {
                     elem: value
                 }))
             },
+            &Type::Enum { ref name, ref variants } => {
+                let fields = variants.iter().map(|variant| {
+                    match variant {
+                        &EnumVariant::Newtype { ref name, value } =>
+                            Ok(FieldType { name: name.to_owned(), id: value }),
+                        _ =>
+                            Err(::serde::de::Error::custom("unsupported variant type"))
+                    }
+                }).collect::<Result<_, Error>>()?;
+                Ok(WireType::Struct(StructType {
+                    common: CommonType { name: name.to_owned(), id },
+                    fields: Cow::Owned(fields)
+                }))
+            },
             _ => {
                 return Err(::serde::de::Error::custom("unsupported type"));
             }
         }
-    }
-}
-
-impl Serialize for WireType {
-    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
-        let mut ser_struct = ser.serialize_struct("WireType", 1)?;
-        match self {
-            &WireType::Array(ref array_type) => {
-                ser_struct.serialize_field("ArrayT", array_type)?;
-                ser_struct.skip_field("SliceT")?;
-                ser_struct.skip_field("StructT")?;
-                ser_struct.skip_field("MapT")?;
-            },
-            &WireType::Slice(ref slice_type) => {
-                ser_struct.skip_field("ArrayT")?;
-                ser_struct.serialize_field("SliceT", slice_type)?;
-                ser_struct.skip_field("StructT")?;
-                ser_struct.skip_field("MapT")?;
-            },
-            &WireType::Struct(ref struct_type) => {
-                ser_struct.skip_field("ArrayT")?;
-                ser_struct.skip_field("SliceT")?;
-                ser_struct.serialize_field("StructT", struct_type)?;
-                ser_struct.skip_field("MapT")?;
-            },
-            &WireType::Map(ref map_type) => {
-                ser_struct.skip_field("ArrayT")?;
-                ser_struct.skip_field("SliceT")?;
-                ser_struct.skip_field("StructT")?;
-                ser_struct.serialize_field("MapT", map_type)?;
-            }
-        }
-        ser_struct.end()
     }
 }
 

@@ -247,7 +247,14 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     fn serialize_newtype_variant<T: ?Sized>(self, name: &'static str, variant_index: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
-        Err(ser::Error::custom("not implemented yet"))
+        let mut ok = {
+            let ser = FieldValueSerializer {
+                ctx: self.ctx,
+                type_id: self.type_id
+            };
+            ser.serialize_newtype_variant(name, variant_index, variant, value)?
+        };
+        ok.ctx.flush(self.type_id, self.out)
     }
 
     fn serialize_seq(mut self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {

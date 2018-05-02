@@ -18,6 +18,8 @@ mod serialize_tuple;
 pub(crate) use self::serialize_tuple::SerializeTupleValue;
 mod serialize_map;
 pub(crate) use self::serialize_map::SerializeMapValue;
+mod serialize_variant;
+use self::serialize_variant::SerializeNewtypeVariantValue;
 
 pub(crate) struct SerializationOk<'t> {
     pub ctx: SerializationCtx<'t>,
@@ -192,10 +194,11 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_newtype_variant<T: ?Sized>(self, name: &'static str, variant_index: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, variant_index: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
-        Err(ser::Error::custom("not implemented yet"))
+        let ser = SerializeNewtypeVariantValue::new(self.ctx, self.type_id, variant_index)?;
+        ser.serialize_value(value)
     }
 
     fn serialize_seq(self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
@@ -211,7 +214,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
     }
 
     fn serialize_tuple_variant(self, name: &'static str, variant_index: u32, variant: &'static str, len: usize) -> Result<Self::SerializeTupleVariant, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+        Err(ser::Error::custom("tuple variants not implemented yet"))
     }
 
     fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {

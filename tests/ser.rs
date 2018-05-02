@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 use gob::StreamSerializer;
 use serde_bytes::Bytes;
 use serde_schema::{Schema, SchemaSerialize};
-use serde_schema::types::{Type, TypeId, StructField};
+use serde_schema::types::{Type, TypeId, StructField, EnumVariant};
 
 #[test]
 fn bool_true() {
@@ -414,5 +414,40 @@ fn point_struct() {
         0x01, 0x02, 0x01, 0x01, 0x58, 0x01, 0x04, 0x00,
         0x01, 0x01, 0x59, 0x01, 0x04, 0x00, 0x00, 0x00,
         0x07, 0xff, 0x82, 0x01, 0x2c, 0x01, 0x42, 0x00
+    ].as_ref());
+}
+
+#[test]
+fn enum_with_newtype_variants_and_external_tags() {
+    #[derive(Serialize)]
+    enum Enum {
+        #[serde(rename = "Var1")] V1(bool),
+        #[serde(rename = "Var2")] V2(i64),
+        #[serde(rename = "Var3")] V3(String),
+    }
+
+    impl SchemaSerialize for Enum {
+        fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
+            schema.register_type(Type::Enum {
+                name: Cow::Borrowed("Enum"),
+                variants: Cow::Owned(vec![
+                    EnumVariant::Newtype { name: Cow::Borrowed("Var1"), value: TypeId::BOOL },
+                    EnumVariant::Newtype { name: Cow::Borrowed("Var2"), value: TypeId::I64 },
+                    EnumVariant::Newtype { name: Cow::Borrowed("Var3"), value: TypeId::STR },
+                ])
+            })
+        }
+    }
+
+    let mut buffer = Vec::new();
+    {
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(&Enum::V2(42)).unwrap();
+    }
+    assert_eq!(buffer, [
+        45, 255, 129, 3, 1, 1, 4, 69, 110, 117, 109, 1, 255, 130, 0, 1,
+        3, 1, 4, 86, 97, 114, 49, 1, 2, 0, 1, 4, 86, 97, 114, 50,
+        1, 4, 0, 1, 4, 86, 97, 114, 51, 1, 12, 0, 0, 0, 5, 255,
+        130, 2, 84, 0
     ].as_ref());
 }
