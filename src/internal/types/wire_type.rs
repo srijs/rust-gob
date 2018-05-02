@@ -9,11 +9,15 @@ use serde_schema::types::{Type, StructField, EnumVariant};
 
 use super::{ArrayType, CommonType, SliceType, StructType, MapType, FieldType, TypeId};
 
-#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum WireType {
+    #[serde(rename="ArrayT")]
     Array(ArrayType),
+    #[serde(rename="SliceT")]
     Slice(SliceType),
+    #[serde(rename="StructT")]
     Struct(StructType),
+    #[serde(rename="MapT")]
     Map(MapType)
 }
 
@@ -99,41 +103,5 @@ impl WireType {
                 return Err(::serde::de::Error::custom("unsupported type"));
             }
         }
-    }
-}
-
-impl<'de> Deserialize<'de> for WireType {
-    fn deserialize<D: Deserializer<'de>>(de: D) -> Result<Self, D::Error> {
-        struct MyVisitor;
-
-        impl<'de> Visitor<'de> for MyVisitor {
-            type Value = WireType;
-
-            fn expecting(&self, f: &mut fmt::Formatter) -> fmt::Result {
-                write!(f, "an WireType struct")
-            }
-
-            fn visit_map<A: MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
-                let wire_type = match map.next_key::<String>()? {
-                    None => Err(serde::de::Error::custom("no fields in WireType")),
-                    Some(ref field) => {
-                        match field.as_ref() {
-                            "ArrayT" => map.next_value::<ArrayType>().map(WireType::Array),
-                            "SliceT" => map.next_value::<SliceType>().map(WireType::Slice),
-                            "StructT" => map.next_value::<StructType>().map(WireType::Struct),
-                            "MapT" => map.next_value::<MapType>().map(WireType::Map),
-                            _ => Err(serde::de::Error::custom("unknown field in WireType"))
-                        }
-                    }
-                }?;
-
-                match map.next_key::<String>()? {
-                    None => Ok(wire_type),
-                    Some(_) => Err(serde::de::Error::custom("more than one field in WireType"))
-                }
-            }
-        }
-
-        de.deserialize_map(MyVisitor)
     }
 }

@@ -344,3 +344,23 @@ fn point_struct() {
     assert_eq!(decoded.x, 22);
     assert_eq!(decoded.y, 33);
 }
+
+#[test]
+fn enum_with_newtype_variants_and_external_tags() {
+    #[derive(Deserialize, Debug, PartialEq, Eq)]
+    enum Enum {
+        #[serde(rename = "Var1")] V1(bool),
+        #[serde(rename = "Var2")] V2(i64),
+        #[serde(rename = "Var3")] V3(String),
+    }
+
+    let deserializer = Deserializer::from_slice(&[
+        45, 255, 129, 3, 1, 1, 4, 69, 110, 117, 109, 1, 255, 130, 0, 1,
+        3, 1, 4, 86, 97, 114, 49, 1, 2, 0, 1, 4, 86, 97, 114, 50,
+        1, 4, 0, 1, 4, 86, 97, 114, 51, 1, 12, 0, 0, 0, 5, 255,
+        130, 2, 84, 0
+    ]);
+
+    let decoded = Enum::deserialize(deserializer).unwrap();
+    assert_eq!(decoded, Enum::V2(42));
+}

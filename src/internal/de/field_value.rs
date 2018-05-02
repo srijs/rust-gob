@@ -95,9 +95,21 @@ impl<'t, 'de> serde::Deserializer<'de> for FieldValueDeserializer<'t, 'de> {
         }
     }
 
+    #[inline]
+    fn deserialize_enum<V>(mut self, name: &'static str, variants: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor<'de>
+    {
+        if let Some(&WireType::Struct(ref struct_type)) = self.defs.lookup(self.type_id) {
+            let de = StructValueDeserializer::new(struct_type, self.defs, self.msg);
+            de.deserialize_enum(name, variants, visitor)
+        } else {
+            Err(serde::de::Error::custom("not an enum type"))
+        }
+    }
+
     forward_to_deserialize_any! {
         bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 str string bytes
         byte_buf option unit unit_struct newtype_struct seq tuple
-        tuple_struct map struct enum identifier ignored_any
+        tuple_struct map struct identifier ignored_any
     }
 }
