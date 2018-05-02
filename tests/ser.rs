@@ -428,14 +428,11 @@ fn enum_with_newtype_variants_and_external_tags() {
 
     impl SchemaSerialize for Enum {
         fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-            schema.register_type(Type::Enum {
-                name: Cow::Borrowed("Enum"),
-                variants: Cow::Owned(vec![
-                    EnumVariant::Newtype { name: Cow::Borrowed("Var1"), value: TypeId::BOOL },
-                    EnumVariant::Newtype { name: Cow::Borrowed("Var2"), value: TypeId::I64 },
-                    EnumVariant::Newtype { name: Cow::Borrowed("Var3"), value: TypeId::STR },
-                ])
-            })
+            schema.register_type(Type::build().enum_type("Enum", 3)
+                .newtype_variant("Var1", TypeId::BOOL)
+                .newtype_variant("Var2", TypeId::I64)
+                .newtype_variant("Var3", TypeId::STR)
+                .end())
         }
     }
 

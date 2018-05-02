@@ -1,5 +1,8 @@
 use std::borrow::Cow;
 
+pub mod builders;
+use self::builders::TypeBuilder;
+
 pub trait TypeId: Clone + 'static {
     const UNIT: Self;
     const BOOL: Self;
@@ -43,4 +46,11 @@ pub enum Type<T: TypeId> {
     Map { key: T, value: T },
     Struct { name: Cow<'static, str>, fields: Cow<'static, [StructField<T>]> },
     Enum { name: Cow<'static, str>, variants: Cow<'static, [EnumVariant<T>]> }
+}
+
+impl<T: TypeId> Type<T> {
+    #[inline]
+    pub fn build() -> TypeBuilder<T> {
+        TypeBuilder::new()
+    }
 }
