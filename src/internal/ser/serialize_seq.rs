@@ -1,6 +1,6 @@
 use serde::ser::{self, Serialize};
 use serde::de::value::Error;
-use serde_schema::Type;
+use serde_schema::types::Type;
 
 use ::internal::types::{TypeId, WireType};
 

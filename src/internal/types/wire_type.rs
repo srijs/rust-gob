@@ -5,7 +5,7 @@ use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::{Visitor, MapAccess};
 use serde::de::value::Error;
 use serde::ser::SerializeStruct;
-use serde_schema::{Type, StructField};
+use serde_schema::types::{Type, StructField};
 
 use super::{ArrayType, CommonType, SliceType, StructType, MapType, FieldType, TypeId};
 

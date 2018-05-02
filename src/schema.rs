@@ -7,6 +7,7 @@ use std::io::Write;
 use serde::de::value::Error;
 use serde::{Deserialize, Deserializer};
 use serde::{Serialize, Serializer};
+use serde_schema::types::Type;
 
 use ::internal::utils::UniqVec;
 use ::internal::gob::{Message, Writer};
@@ -15,7 +16,7 @@ use ::internal::ser::{SerializationCtx, FieldValueSerializer};
 
 pub struct Schema {
     pending_wire_types: Vec<(TypeId, Vec<u8>)>,
-    schema_types: UniqVec<::serde_schema::Type<TypeId>>
+    schema_types: UniqVec<Type<TypeId>>
 }
 
 impl Schema {
@@ -26,7 +27,7 @@ impl Schema {
         }
     }
 
-    pub(crate) fn lookup(&self, id: TypeId) -> Option<&::serde_schema::Type<TypeId>> {
+    pub(crate) fn lookup(&self, id: TypeId) -> Option<&Type<TypeId>> {
         ::internal::types::lookup_builtin(id).or_else(||
             self.schema_types.get(id.to_vec_idx()))
     }
@@ -55,7 +56,7 @@ impl ::serde_schema::Schema for Schema {
     type TypeId = TypeId;
     type Error = Error;
 
-    fn register_type(&mut self, ty: ::serde_schema::Type<TypeId>) -> Result<TypeId, Error> {
+    fn register_type(&mut self, ty: Type<TypeId>) -> Result<TypeId, Error> {
         let mut wire_type = WireType::from_type(TypeId(0), &ty)?;
 
         let (idx, new) = self.schema_types.push(ty);
@@ -100,7 +101,7 @@ impl TypeId {
     }
 }
 
-impl ::serde_schema::TypeId for TypeId {
+impl ::serde_schema::types::TypeId for TypeId {
     const BOOL: TypeId = TypeId(1);
     const I8: TypeId = TypeId(2);
     const I16: TypeId = TypeId(2);

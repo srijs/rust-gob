@@ -10,7 +10,7 @@ use std::collections::HashMap;
 use gob::StreamSerializer;
 use gob::ser::TypeId;
 use serde_bytes::Bytes;
-use serde_schema::{Schema, SchemaSerializer};
+use serde_schema::{Schema, SchemaSerializer, SchemaSerialize, types::Type};
 
 #[test]
 fn bool_true() {
@@ -366,13 +366,13 @@ fn point_struct() {
         #[serde(rename = "Y")] y: i64
     }
 
-    impl ::serde_schema::SchemaSerialize for Point {
-        fn schema_register<S: ::serde_schema::Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-            schema.register_type(::serde_schema::Type::Struct {
+    impl SchemaSerialize for Point {
+        fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
+            schema.register_type(Type::Struct {
                 name: Cow::Borrowed("Point"),
                 fields: Cow::Owned(vec![
-                    ::serde_schema::StructField { name: Cow::Borrowed("X"), id: ::serde_schema::TypeId::I64 },
-                    ::serde_schema::StructField { name: Cow::Borrowed("Y"), id: ::serde_schema::TypeId::I64 },
+                    ::serde_schema::types::StructField { name: Cow::Borrowed("X"), id: ::serde_schema::types::TypeId::I64 },
+                    ::serde_schema::types::StructField { name: Cow::Borrowed("Y"), id: ::serde_schema::types::TypeId::I64 },
                 ])
             })
         }

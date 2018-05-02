@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use serde_schema::Type;
+use serde_schema::types::Type;
 
 mod wire_type;
 pub(crate) use self::wire_type::WireType;

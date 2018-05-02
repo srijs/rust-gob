@@ -3,8 +3,7 @@ extern crate serde;
 #[cfg(feature = "bytes")]
 extern crate serde_bytes;
 
-mod types;
-pub use self::types::{TypeId, StructField, EnumVariant, Type};
+pub mod types;
 
 mod schema;
 pub use self::schema::Schema;

@@ -1,6 +1,6 @@
 use serde::ser::Error;
 
-use ::{Type, TypeId};
+use ::types::{Type, TypeId};
 
 pub trait Schema {
     type TypeId: TypeId;

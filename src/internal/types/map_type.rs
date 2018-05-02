@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use serde_schema::{Type, StructField};
+use serde_schema::types::{Type, StructField};
 
 use super::{CommonType, TypeId, StructType, FieldType, WireType};
 
