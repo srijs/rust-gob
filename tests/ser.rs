@@ -8,9 +8,9 @@ use std::borrow::Cow;
 use std::collections::HashMap;
 
 use gob::StreamSerializer;
-use gob::ser::TypeId;
 use serde_bytes::Bytes;
-use serde_schema::{Schema, SchemaSerializer, SchemaSerialize, types::Type};
+use serde_schema::{Schema, SchemaSerialize};
+use serde_schema::types::{Type, TypeId, StructField};
 
 #[test]
 fn bool_true() {
@@ -359,6 +359,32 @@ fn vec_of_bool_to_empty_slice_twice() {
 }
 
 #[test]
+fn map_empty() {
+    let mut buffer = Vec::new();
+    {
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(&<HashMap<String, bool>>::new()).unwrap();
+    }
+    assert_eq!(buffer,
+        &[14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 4, 255, 130, 0, 0]);
+}
+
+#[test]
+fn map_non_empty() {
+    let mut buffer = Vec::new();
+    {
+        let mut stream = StreamSerializer::new(&mut buffer);
+        let mut map = HashMap::new();
+        map.insert("foo", true);
+        map.insert("bar", false);
+        stream.serialize(&map).unwrap();
+    }
+    assert_eq!(buffer,
+        &[14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 14, 255, 130,
+          0, 2, 3, 102, 111, 111, 1, 3, 98, 97, 114, 0]);
+}
+
+#[test]
 fn point_struct() {
     #[derive(Serialize)]
     struct Point {
@@ -371,8 +397,8 @@ fn point_struct() {
             schema.register_type(Type::Struct {
                 name: Cow::Borrowed("Point"),
                 fields: Cow::Owned(vec![
-                    ::serde_schema::types::StructField { name: Cow::Borrowed("X"), id: ::serde_schema::types::TypeId::I64 },
-                    ::serde_schema::types::StructField { name: Cow::Borrowed("Y"), id: ::serde_schema::types::TypeId::I64 },
+                    StructField { name: Cow::Borrowed("X"), id: TypeId::I64 },
+                    StructField { name: Cow::Borrowed("Y"), id: TypeId::I64 },
                 ])
             })
         }

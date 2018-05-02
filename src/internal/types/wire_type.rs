@@ -108,6 +108,13 @@ impl WireType {
                     elem: element
                 }))
             },
+            &Type::Map { key, value } => {
+                Ok(WireType::Map(MapType {
+                    common: CommonType { name: Cow::Borrowed(""), id },
+                    key: key,
+                    elem: value
+                }))
+            },
             _ => {
                 return Err(::serde::de::Error::custom("unsupported type"));
             }

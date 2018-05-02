@@ -19,6 +19,8 @@ mod serialize_seq;
 pub use self::serialize_seq::SerializeSeq;
 mod serialize_tuple;
 pub use self::serialize_tuple::SerializeTuple;
+mod serialize_map;
+pub use self::serialize_map::SerializeMap;
 
 /// Serializes a single value.
 pub struct Serializer<'t, W> {
@@ -106,7 +108,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     type SerializeTuple = SerializeTuple<'t, W>;
     type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
-    type SerializeMap = Impossible<Self::Ok, Self::Error>;
+    type SerializeMap = SerializeMap<'t, W>;
     type SerializeStruct = SerializeStruct<'t, W>;
     type SerializeStructVariant = Impossible<Self::Ok, Self::Error>;
 
@@ -266,8 +268,9 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+    fn serialize_map(mut self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
+        self.ctx.value.write_uint(0)?;
+        SerializeMap::new(len, self.type_id, self.ctx, self.out)
     }
 
     fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct, Self::Error> {

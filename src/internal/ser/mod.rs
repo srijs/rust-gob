@@ -16,6 +16,8 @@ mod serialize_seq;
 pub(crate) use self::serialize_seq::SerializeSeqValue;
 mod serialize_tuple;
 pub(crate) use self::serialize_tuple::SerializeTupleValue;
+mod serialize_map;
+pub(crate) use self::serialize_map::SerializeMapValue;
 
 pub(crate) struct SerializationOk<'t> {
     pub ctx: SerializationCtx<'t>,
@@ -71,7 +73,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
     type SerializeTuple = SerializeTupleValue<'t>;
     type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
-    type SerializeMap = Impossible<Self::Ok, Self::Error>;
+    type SerializeMap = SerializeMapValue<'t>;
     type SerializeStruct = SerializeStructValue<'t>;
     type SerializeStructVariant = Impossible<Self::Ok, Self::Error>;
 
@@ -213,7 +215,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
     }
 
     fn serialize_map(self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+        SerializeMapValue::new(self.ctx, len, self.type_id)
     }
 
     fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct, Self::Error> {
