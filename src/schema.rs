@@ -12,7 +12,7 @@ use serde_schema::types::Type;
 use ::internal::utils::UniqMap;
 use ::internal::gob::{Message, Writer};
 use ::internal::types::{Types, WireType, CommonType, StructType, FieldType, ArrayType, SliceType, MapType};
-use ::internal::ser::{SerializationCtx, FieldValueSerializer};
+use ::internal::ser::{SerializationCtx, FieldValueSerializer, SerializeWireTypes};
 
 pub struct Schema {
     pending_wire_types: Vec<(TypeId, Vec<u8>)>,
@@ -40,18 +40,6 @@ impl Schema {
         }
         Ok(())
     }
-
-    fn queue_wire_type(&mut self, wire_type: &WireType) -> Result<(), Error> {
-        let wire_type_ctx = SerializationCtx::new();
-        let ser = FieldValueSerializer {
-            ctx: wire_type_ctx,
-            type_id: TypeId::WIRE_TYPE
-        };
-        let ok = wire_type.serialize(ser)?;
-        self.pending_wire_types.push(
-            (wire_type.common().id, ok.ctx.value.into_inner()));
-        Ok(())
-    }
 }
 
 impl ::serde_schema::Schema for Schema {
@@ -60,20 +48,16 @@ impl ::serde_schema::Schema for Schema {
 
     fn register_type(&mut self, ty: Type<TypeId>) -> Result<TypeId, Error> {
         let next_id = self.next_type_id;
-        let mut other_wire_types = Vec::new();
-        let wire_type = WireType::convert(next_id, &ty, &mut other_wire_types)?;
 
         if let Some(id) = self.schema_types.insert(next_id, ty) {
             return Ok(id);
         }
 
-        self.queue_wire_type(&wire_type)?;
-        for other_wire_type in other_wire_types.iter() {
-            self.queue_wire_type(&other_wire_type)?;
-        }
+        let delta = SerializeWireTypes::new(&mut self.pending_wire_types)
+            .serialize_wire_types(next_id, self.schema_types.get(&next_id).unwrap())?;
 
         self.next_type_id = TypeId(
-            (self.next_type_id.0 as usize + 1 + other_wire_types.len()) as i64);
+            (self.next_type_id.0 as usize + delta) as i64);
 
         Ok(next_id)
     }

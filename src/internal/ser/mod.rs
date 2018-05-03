@@ -23,6 +23,8 @@ pub(crate) use self::serialize_variant::{
     SerializeVariantValue,
     SerializeStructVariantValue
 };
+mod serialize_wire_types;
+pub(crate) use self::serialize_wire_types::SerializeWireTypes;
 
 pub(crate) struct SerializationOk<'t> {
     pub ctx: SerializationCtx<'t>,
