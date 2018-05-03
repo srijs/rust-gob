@@ -5,12 +5,11 @@ extern crate serde_bytes;
 extern crate serde_derive;
 extern crate serde_schema;
 
-use std::borrow::Cow;
 use std::collections::BTreeMap;
 
 use gob::StreamSerializer;
 use serde_bytes::Bytes;
-use serde_schema::types::{StructField, Type, TypeId};
+use serde_schema::types::{Type, TypeId};
 use serde_schema::{Schema, SchemaSerialize};
 
 #[test]
@@ -432,19 +431,13 @@ struct Point {
 
 impl SchemaSerialize for Point {
     fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-        schema.register_type(Type::Struct {
-            name: Cow::Borrowed("Point"),
-            fields: Cow::Owned(vec![
-                StructField {
-                    name: Cow::Borrowed("X"),
-                    id: TypeId::I64,
-                },
-                StructField {
-                    name: Cow::Borrowed("Y"),
-                    id: TypeId::I64,
-                },
-            ]),
-        })
+        schema.register_type(
+            Type::build()
+                .struct_type("Point", 2)
+                .field("X", TypeId::I64)
+                .field("Y", TypeId::I64)
+                .end(),
+        )
     }
 }
 
