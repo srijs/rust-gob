@@ -1,11 +1,11 @@
 use serde;
 use serde::de::value::Error;
 
-mod field_value;
-mod struct_value;
-mod seq_value;
-mod map_value;
 mod complex_value;
+mod field_value;
+mod map_value;
+mod seq_value;
+mod struct_value;
 mod value;
 
 pub(crate) use self::field_value::FieldValueDeserializer;

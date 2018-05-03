@@ -7,14 +7,14 @@ use serde::{Deserialize, Deserializer};
 use serde::{Serialize, Serializer};
 use serde_schema::types::Type;
 
-use ::internal::utils::UniqMap;
-use ::internal::gob::Writer;
-use ::internal::ser::SerializeWireTypes;
+use internal::gob::Writer;
+use internal::ser::SerializeWireTypes;
+use internal::utils::UniqMap;
 
 pub struct Schema {
     pending_wire_types: Vec<(TypeId, Vec<u8>)>,
     next_type_id: TypeId,
-    schema_types: UniqMap<TypeId, Type<TypeId>>
+    schema_types: UniqMap<TypeId, Type<TypeId>>,
 }
 
 impl Schema {
@@ -22,13 +22,12 @@ impl Schema {
         Schema {
             pending_wire_types: Vec::new(),
             next_type_id: TypeId(65),
-            schema_types: UniqMap::new()
+            schema_types: UniqMap::new(),
         }
     }
 
     pub(crate) fn lookup(&self, id: TypeId) -> Option<&Type<TypeId>> {
-        ::internal::types::lookup_builtin(id).or_else(||
-            self.schema_types.get(&id))
+        ::internal::types::lookup_builtin(id).or_else(|| self.schema_types.get(&id))
     }
 
     pub(crate) fn write_pending<W: Write>(&mut self, mut out: Writer<W>) -> Result<(), Error> {
@@ -53,8 +52,7 @@ impl ::serde_schema::Schema for Schema {
         let delta = SerializeWireTypes::new(&mut self.pending_wire_types)
             .serialize_wire_types(next_id, self.schema_types.get(&next_id).unwrap())?;
 
-        self.next_type_id = TypeId(
-            (self.next_type_id.0 as usize + delta) as i64);
+        self.next_type_id = TypeId((self.next_type_id.0 as usize + delta) as i64);
 
         Ok(next_id)
     }
@@ -116,7 +114,10 @@ impl<'de> Deserialize<'de> for TypeId {
 impl Serialize for TypeId {
     fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
         if self.0 <= 0 {
-            return Err(::serde::ser::Error::custom(format!("invalid type id {}", self.0)));
+            return Err(::serde::ser::Error::custom(format!(
+                "invalid type id {}",
+                self.0
+            )));
         }
         self.0.serialize(ser)
     }

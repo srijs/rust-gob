@@ -1,18 +1,21 @@
 use std::io::Write;
 
-use serde::ser::{self, Serialize};
 use serde::de::value::Error;
+use serde::ser::{self, Serialize};
 
-use ::internal::gob::Writer;
-use ::internal::ser::SerializeStructVariantValue;
+use internal::gob::Writer;
+use internal::ser::SerializeStructVariantValue;
 
 pub struct SerializeStructVariant<'t, W> {
     inner: SerializeStructVariantValue<'t>,
-    out: Writer<W>
+    out: Writer<W>,
 }
 
 impl<'t, W: Write> SerializeStructVariant<'t, W> {
-    pub(crate) fn new(inner: SerializeStructVariantValue<'t>, out: Writer<W>) -> Result<Self, Error> {
+    pub(crate) fn new(
+        inner: SerializeStructVariantValue<'t>,
+        out: Writer<W>,
+    ) -> Result<Self, Error> {
         Ok(SerializeStructVariant { inner, out })
     }
 }
@@ -21,8 +24,13 @@ impl<'t, W: Write> ser::SerializeStructVariant for SerializeStructVariant<'t, W>
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T: ?Sized>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
-        where T: Serialize
+    fn serialize_field<T: ?Sized>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error>
+    where
+        T: Serialize,
     {
         self.inner.serialize_field(key, value)
     }

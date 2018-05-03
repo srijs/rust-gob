@@ -1,19 +1,19 @@
-use std::collections::HashMap;
 use std::collections::hash_map::RandomState;
+use std::collections::HashMap;
 use std::hash::{BuildHasher, Hash, Hasher};
 
 use smallvec::SmallVec;
 
 pub struct UniqMap<K, V, S = RandomState> {
     values: HashMap<K, V, S>,
-    lookup: HashMap<u64, SmallVec<[K; 4]>>
+    lookup: HashMap<u64, SmallVec<[K; 4]>>,
 }
 
 impl<K: Eq + Hash + Clone, V: Eq + Hash> UniqMap<K, V, RandomState> {
     pub fn new() -> UniqMap<K, V, RandomState> {
         UniqMap {
             values: HashMap::new(),
-            lookup: HashMap::new()
+            lookup: HashMap::new(),
         }
     }
 }
@@ -36,7 +36,7 @@ impl<K: Eq + Hash + Clone, V: Eq + Hash, S: BuildHasher> UniqMap<K, V, S> {
                 entry.get_mut().push(k.clone());
                 self.values.insert(k, v);
                 return None;
-            },
+            }
             Entry::Vacant(entry) => {
                 entry.insert(SmallVec::new()).push(k.clone());
                 self.values.insert(k, v);

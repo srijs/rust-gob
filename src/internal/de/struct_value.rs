@@ -1,34 +1,45 @@
 use std::io::Cursor;
 
 use serde;
-use serde::de::{Deserializer, DeserializeSeed, IntoDeserializer, Visitor};
-use serde::de::{MapAccess, EnumAccess, VariantAccess};
 use serde::de::value::Error;
+use serde::de::{DeserializeSeed, Deserializer, IntoDeserializer, Visitor};
+use serde::de::{EnumAccess, MapAccess, VariantAccess};
 
-use ::internal::gob::Message;
-use ::internal::types::{StructType, FieldType, Types};
 use super::FieldValueDeserializer;
+use internal::gob::Message;
+use internal::types::{FieldType, StructType, Types};
 
-struct StructAccess<'t, 'de> where 'de: 't {
+struct StructAccess<'t, 'de>
+where
+    'de: 't,
+{
     def: &'t StructType,
     defs: &'t Types,
     field_no: i64,
-    msg: &'t mut Message<Cursor<&'de [u8]>>
+    msg: &'t mut Message<Cursor<&'de [u8]>>,
 }
 
 impl<'t, 'de> StructAccess<'t, 'de> {
-    fn new(def: &'t StructType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> StructAccess<'t, 'de> {
+    fn new(
+        def: &'t StructType,
+        defs: &'t Types,
+        msg: &'t mut Message<Cursor<&'de [u8]>>,
+    ) -> StructAccess<'t, 'de> {
         StructAccess {
-            def, defs,
+            def,
+            defs,
             field_no: -1,
-            msg
+            msg,
         }
     }
 
     fn current_field(&self) -> Result<&'t FieldType, Error> {
         let field_no = self.field_no as usize;
         if field_no >= self.def.fields.len() {
-            return Err(serde::de::Error::custom(format!("field number overflow ({}) on type {:?}", field_no, self.def)));
+            return Err(serde::de::Error::custom(format!(
+                "field number overflow ({}) on type {:?}",
+                field_no, self.def
+            )));
         }
         Ok(&self.def.fields[field_no])
     }
@@ -38,7 +49,8 @@ impl<'t, 'de> MapAccess<'de> for StructAccess<'t, 'de> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
-        where K: DeserializeSeed<'de>
+    where
+        K: DeserializeSeed<'de>,
     {
         let field_delta = self.msg.read_uint()?;
 
@@ -55,7 +67,8 @@ impl<'t, 'de> MapAccess<'de> for StructAccess<'t, 'de> {
     }
 
     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
-        where V: DeserializeSeed<'de>
+    where
+        V: DeserializeSeed<'de>,
     {
         let field = self.current_field()?;
         let de = FieldValueDeserializer::new(field.id, self.defs, &mut self.msg);
@@ -68,7 +81,8 @@ impl<'t, 'de> EnumAccess<'de> for StructAccess<'t, 'de> {
     type Variant = Self;
 
     fn variant_seed<V>(mut self, seed: V) -> Result<(V::Value, Self::Variant), Error>
-        where V: DeserializeSeed<'de>
+    where
+        V: DeserializeSeed<'de>,
     {
         if let Some(val) = self.next_key_seed(seed)? {
             Ok((val, self))
@@ -86,7 +100,8 @@ impl<'t, 'de> VariantAccess<'de> for StructAccess<'t, 'de> {
     }
 
     fn newtype_variant_seed<T>(mut self, seed: T) -> Result<T::Value, Error>
-        where T: DeserializeSeed<'de>
+    where
+        T: DeserializeSeed<'de>,
     {
         let field = self.current_field()?;
         let val = {
@@ -95,14 +110,17 @@ impl<'t, 'de> VariantAccess<'de> for StructAccess<'t, 'de> {
         };
         let field_delta = self.msg.read_uint()?;
         if field_delta != 0 {
-            Err(serde::de::Error::custom("enum struct has more than one field"))
+            Err(serde::de::Error::custom(
+                "enum struct has more than one field",
+            ))
         } else {
             Ok(val)
         }
     }
 
     fn tuple_variant<V>(mut self, _len: usize, visitor: V) -> Result<V::Value, Error>
-        where V: Visitor<'de>
+    where
+        V: Visitor<'de>,
     {
         let field = self.current_field()?;
         let val = {
@@ -111,14 +129,21 @@ impl<'t, 'de> VariantAccess<'de> for StructAccess<'t, 'de> {
         };
         let field_delta = self.msg.read_uint()?;
         if field_delta != 0 {
-            Err(serde::de::Error::custom("enum struct has more than one field"))
+            Err(serde::de::Error::custom(
+                "enum struct has more than one field",
+            ))
         } else {
             Ok(val)
         }
     }
 
-    fn struct_variant<V>(mut self, _fields: &'static [&'static str], visitor: V) -> Result<V::Value, Error>
-        where V: Visitor<'de>
+    fn struct_variant<V>(
+        mut self,
+        _fields: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Error>
+    where
+        V: Visitor<'de>,
     {
         let field = self.current_field()?;
         let val = {
@@ -127,22 +152,31 @@ impl<'t, 'de> VariantAccess<'de> for StructAccess<'t, 'de> {
         };
         let field_delta = self.msg.read_uint()?;
         if field_delta != 0 {
-            Err(serde::de::Error::custom("enum struct has more than one field"))
+            Err(serde::de::Error::custom(
+                "enum struct has more than one field",
+            ))
         } else {
             Ok(val)
         }
     }
 }
 
-pub(crate) struct StructValueDeserializer<'t, 'de> where 'de: 't {
+pub(crate) struct StructValueDeserializer<'t, 'de>
+where
+    'de: 't,
+{
     def: &'t StructType,
     defs: &'t Types,
-    msg: &'t mut Message<Cursor<&'de [u8]>>
+    msg: &'t mut Message<Cursor<&'de [u8]>>,
 }
 
 impl<'t, 'de> StructValueDeserializer<'t, 'de> {
     #[inline]
-    pub(crate) fn new(def: &'t StructType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> StructValueDeserializer<'t, 'de> {
+    pub(crate) fn new(
+        def: &'t StructType,
+        defs: &'t Types,
+        msg: &'t mut Message<Cursor<&'de [u8]>>,
+    ) -> StructValueDeserializer<'t, 'de> {
         StructValueDeserializer { def, defs, msg }
     }
 }
@@ -152,14 +186,21 @@ impl<'t, 'de> Deserializer<'de> for StructValueDeserializer<'t, 'de> {
 
     #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
+    where
+        V: Visitor<'de>,
     {
         visitor.visit_map(StructAccess::new(self.def, self.defs, self.msg))
     }
 
     #[inline]
-    fn deserialize_enum<V>(self, _: &'static str, _: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
+    fn deserialize_enum<V>(
+        self,
+        _: &'static str,
+        _: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
     {
         visitor.visit_enum(StructAccess::new(self.def, self.defs, self.msg))
     }

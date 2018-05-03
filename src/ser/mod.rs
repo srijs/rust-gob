@@ -2,20 +2,16 @@
 
 use std::io::Write;
 
-use serde::Serialize;
-use serde::ser::{self, Impossible};
 use serde::de::value::Error;
+use serde::ser::{self, Impossible};
+use serde::Serialize;
 use serde_schema::SchemaSerialize;
 
-use ::internal::utils::Bow;
-use ::internal::gob::Writer;
-use ::internal::ser::{
-    SerializationCtx,
-    FieldValueSerializer,
-    SerializeVariantValue
-};
+use internal::gob::Writer;
+use internal::ser::{FieldValueSerializer, SerializationCtx, SerializeVariantValue};
+use internal::utils::Bow;
 
-pub use ::schema::{Schema, TypeId};
+pub use schema::{Schema, TypeId};
 
 mod serialize_struct;
 pub use self::serialize_struct::SerializeStruct;
@@ -51,7 +47,11 @@ impl<'t, W> Serializer<'t, W> {
     }
 
     fn with_context(id: TypeId, ctx: SerializationCtx<'t>, out: Writer<W>) -> Self {
-        Serializer { ctx, type_id: id, out }
+        Serializer {
+            ctx,
+            type_id: id,
+            out,
+        }
     }
 }
 
@@ -65,13 +65,17 @@ impl<W> StreamSerializer<W> {
     /// Create a new stream serializer with the provided output sink.
     pub fn new(out: W) -> StreamSerializer<W> {
         let schema = Schema::new();
-        StreamSerializer { schema, out: Writer::new(out) }
+        StreamSerializer {
+            schema,
+            out: Writer::new(out),
+        }
     }
 
     /// Serialize a value onto the stream.
     pub fn serialize<T>(&mut self, value: &T) -> Result<(), Error>
-        where T: SchemaSerialize,
-              W: Write
+    where
+        T: SchemaSerialize,
+        W: Write,
     {
         value.schema_serialize(self)
     }
@@ -123,7 +127,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
-                type_id: self.type_id
+                type_id: self.type_id,
             };
             ser.serialize_bool(v)?
         };
@@ -147,7 +151,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
-                type_id: self.type_id
+                type_id: self.type_id,
             };
             ser.serialize_i64(v)?
         };
@@ -171,7 +175,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
-                type_id: self.type_id
+                type_id: self.type_id,
             };
             ser.serialize_u64(v)?
         };
@@ -187,7 +191,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
-                type_id: self.type_id
+                type_id: self.type_id,
             };
             ser.serialize_f64(v)?
         };
@@ -203,7 +207,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
-                type_id: self.type_id
+                type_id: self.type_id,
             };
             ser.serialize_str(v)?
         };
@@ -215,7 +219,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
-                type_id: self.type_id
+                type_id: self.type_id,
             };
             ser.serialize_bytes(v)?
         };
@@ -227,7 +231,8 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     }
 
     fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    where
+        T: Serialize,
     {
         Err(ser::Error::custom("not implemented yet"))
     }
@@ -240,23 +245,40 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_unit_variant(self, _name: &'static str, _variant_index: u32, _variant: &'static str) -> Result<Self::Ok, Self::Error> {
+    fn serialize_unit_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+    ) -> Result<Self::Ok, Self::Error> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_struct<T: ?Sized>(
+        self,
+        _name: &'static str,
+        _value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
     {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_newtype_variant<T: ?Sized>(self, name: &'static str, variant_index: u32, variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_variant<T: ?Sized>(
+        self,
+        name: &'static str,
+        variant_index: u32,
+        variant: &'static str,
+        value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
     {
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
-                type_id: self.type_id
+                type_id: self.type_id,
             };
             ser.serialize_newtype_variant(name, variant_index, variant, value)?
         };
@@ -273,11 +295,21 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         SerializeTuple::homogeneous(self.type_id, self.ctx, self.out)
     }
 
-    fn serialize_tuple_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeTupleStruct, Self::Error> {
+    fn serialize_tuple_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleStruct, Self::Error> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_tuple_variant(self, _name: &'static str, _variant_index: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeTupleVariant, Self::Error> {
+    fn serialize_tuple_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleVariant, Self::Error> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
@@ -286,12 +318,23 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         SerializeMap::new(len, self.type_id, self.ctx, self.out)
     }
 
-    fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct, Self::Error> {
+    fn serialize_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStruct, Self::Error> {
         Ok(SerializeStruct::new(self.type_id, self.ctx, self.out)?)
     }
 
-    fn serialize_struct_variant(self, _name: &'static str, variant_index: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
-        let inner = SerializeVariantValue::new(self.ctx, self.type_id, variant_index)?.serialize_struct()?;
+    fn serialize_struct_variant(
+        self,
+        _name: &'static str,
+        variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStructVariant, Self::Error> {
+        let inner =
+            SerializeVariantValue::new(self.ctx, self.type_id, variant_index)?.serialize_struct()?;
         SerializeStructVariant::new(inner, self.out)
     }
 }

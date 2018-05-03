@@ -1,24 +1,36 @@
 use std::io::Cursor;
 
-use serde::de::{Deserializer, DeserializeSeed, MapAccess, Visitor};
 use serde::de::value::Error;
+use serde::de::{DeserializeSeed, Deserializer, MapAccess, Visitor};
 
-use ::internal::gob::Message;
-use ::internal::types::{MapType, Types};
 use super::FieldValueDeserializer;
+use internal::gob::Message;
+use internal::types::{MapType, Types};
 
-struct MapMapAccess<'t, 'de> where 'de: 't {
+struct MapMapAccess<'t, 'de>
+where
+    'de: 't,
+{
     def: &'t MapType,
     defs: &'t Types,
     remaining_count: u64,
-    msg: &'t mut Message<Cursor<&'de [u8]>>
+    msg: &'t mut Message<Cursor<&'de [u8]>>,
 }
 
 impl<'t, 'de> MapMapAccess<'t, 'de> {
-    fn new(def: &'t MapType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> Result<MapMapAccess<'t, 'de>, Error> {
+    fn new(
+        def: &'t MapType,
+        defs: &'t Types,
+        msg: &'t mut Message<Cursor<&'de [u8]>>,
+    ) -> Result<MapMapAccess<'t, 'de>, Error> {
         let remaining_count = msg.read_uint()?;
 
-        Ok(MapMapAccess { def, defs, remaining_count, msg })
+        Ok(MapMapAccess {
+            def,
+            defs,
+            remaining_count,
+            msg,
+        })
     }
 }
 
@@ -26,7 +38,8 @@ impl<'f, 'de> MapAccess<'de> for MapMapAccess<'f, 'de> {
     type Error = Error;
 
     fn next_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
-        where K: DeserializeSeed<'de>
+    where
+        K: DeserializeSeed<'de>,
     {
         if self.remaining_count == 0 {
             return Ok(None);
@@ -37,7 +50,8 @@ impl<'f, 'de> MapAccess<'de> for MapMapAccess<'f, 'de> {
     }
 
     fn next_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
-        where V: DeserializeSeed<'de>
+    where
+        V: DeserializeSeed<'de>,
     {
         let de = FieldValueDeserializer::new(self.def.elem, self.defs, &mut self.msg);
         seed.deserialize(de)
@@ -48,15 +62,22 @@ impl<'f, 'de> MapAccess<'de> for MapMapAccess<'f, 'de> {
     }
 }
 
-pub(crate) struct MapValueDeserializer<'t, 'de> where 'de: 't {
+pub(crate) struct MapValueDeserializer<'t, 'de>
+where
+    'de: 't,
+{
     def: &'t MapType,
     defs: &'t Types,
-    msg: &'t mut Message<Cursor<&'de [u8]>>
+    msg: &'t mut Message<Cursor<&'de [u8]>>,
 }
 
 impl<'t, 'de> MapValueDeserializer<'t, 'de> {
     #[inline]
-    pub(crate) fn new(def: &'t MapType, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> MapValueDeserializer<'t, 'de> {
+    pub(crate) fn new(
+        def: &'t MapType,
+        defs: &'t Types,
+        msg: &'t mut Message<Cursor<&'de [u8]>>,
+    ) -> MapValueDeserializer<'t, 'de> {
         MapValueDeserializer { def, defs, msg }
     }
 }
@@ -66,7 +87,8 @@ impl<'t, 'de> Deserializer<'de> for MapValueDeserializer<'t, 'de> {
 
     #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
+    where
+        V: Visitor<'de>,
     {
         visitor.visit_map(MapMapAccess::new(self.def, self.defs, self.msg)?)
     }

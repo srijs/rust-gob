@@ -1,12 +1,12 @@
-use serde::ser::{self, Serialize};
 use serde::de::value::Error;
+use serde::ser::{self, Serialize};
 
-use ::internal::types::TypeId;
+use internal::types::TypeId;
 
-use super::{SerializationOk, SerializationCtx, SerializeSeqValue};
+use super::{SerializationCtx, SerializationOk, SerializeSeqValue};
 
 pub(crate) enum SerializeTupleValue<'t> {
-    Homogeneous(SerializeSeqValue<'t>)
+    Homogeneous(SerializeSeqValue<'t>),
 }
 
 impl<'t> SerializeTupleValue<'t> {
@@ -17,7 +17,7 @@ impl<'t> SerializeTupleValue<'t> {
 
     pub(crate) fn type_id(&self) -> TypeId {
         match self {
-            &SerializeTupleValue::Homogeneous(ref inner) => inner.type_id()
+            &SerializeTupleValue::Homogeneous(ref inner) => inner.type_id(),
         }
     }
 }
@@ -27,18 +27,19 @@ impl<'t> ser::SerializeTuple for SerializeTupleValue<'t> {
     type Error = Error;
 
     fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
-        where T: Serialize
+    where
+        T: Serialize,
     {
         match self {
-            &mut SerializeTupleValue::Homogeneous(ref mut inner) =>
+            &mut SerializeTupleValue::Homogeneous(ref mut inner) => {
                 ser::SerializeSeq::serialize_element(inner, value)
+            }
         }
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
         match self {
-            SerializeTupleValue::Homogeneous(inner) =>
-                ser::SerializeSeq::end(inner)
+            SerializeTupleValue::Homogeneous(inner) => ser::SerializeSeq::end(inner),
         }
     }
 }

@@ -1,10 +1,10 @@
-use serde::ser::{self, Serialize};
 use serde::de::value::Error;
+use serde::ser::{self, Serialize};
 use serde_schema::types::Type;
 
-use ::internal::types::TypeId;
+use internal::types::TypeId;
 
-use super::{SerializationOk, SerializationCtx, FieldValueSerializer};
+use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
 
 pub(crate) struct SerializeMapValue<'t> {
     needs_init: bool,
@@ -12,26 +12,37 @@ pub(crate) struct SerializeMapValue<'t> {
     type_id: TypeId,
     len: usize,
     key: TypeId,
-    value: TypeId
+    value: TypeId,
 }
 
 impl<'t> SerializeMapValue<'t> {
-    pub(crate) fn new(ctx: SerializationCtx<'t>, ser_len: Option<usize>, type_id: TypeId) -> Result<Self, Error> {
+    pub(crate) fn new(
+        ctx: SerializationCtx<'t>,
+        ser_len: Option<usize>,
+        type_id: TypeId,
+    ) -> Result<Self, Error> {
         let (len, key, value) = match ctx.schema.lookup(type_id) {
             Some(&Type::Map { key, value }) => {
                 if let Some(len) = ser_len {
                     (len, key, value)
                 } else {
-                    return Err(ser::Error::custom("maps without known length not supported"));
+                    return Err(ser::Error::custom(
+                        "maps without known length not supported",
+                    ));
                 }
-            },
+            }
             _ => {
                 return Err(ser::Error::custom("schema mismatch, not a map"));
             }
         };
 
         Ok(SerializeMapValue {
-            needs_init: true, ctx, type_id, len, key, value
+            needs_init: true,
+            ctx,
+            type_id,
+            len,
+            key,
+            value,
         })
     }
 
@@ -45,24 +56,32 @@ impl<'t> ser::SerializeMap for SerializeMapValue<'t> {
     type Error = Error;
 
     fn serialize_key<T: ?Sized>(&mut self, key: &T) -> Result<(), Self::Error>
-        where T: Serialize
+    where
+        T: Serialize,
     {
         if self.needs_init {
             self.ctx.value.write_uint(self.len as u64)?;
             self.needs_init = false;
         }
         let ctx = ::std::mem::replace(&mut self.ctx, SerializationCtx::new());
-        let de = FieldValueSerializer { ctx, type_id: self.key };
+        let de = FieldValueSerializer {
+            ctx,
+            type_id: self.key,
+        };
         let ok = key.serialize(de)?;
         self.ctx = ok.ctx;
         Ok(())
     }
 
     fn serialize_value<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
-        where T: Serialize
+    where
+        T: Serialize,
     {
         let ctx = ::std::mem::replace(&mut self.ctx, SerializationCtx::new());
-        let de = FieldValueSerializer { ctx, type_id: self.value };
+        let de = FieldValueSerializer {
+            ctx,
+            type_id: self.value,
+        };
         let ok = value.serialize(de)?;
         self.ctx = ok.ctx;
         Ok(())
@@ -77,7 +96,7 @@ impl<'t> ser::SerializeMap for SerializeMapValue<'t> {
 
         Ok(SerializationOk {
             ctx: self.ctx,
-            is_empty: is_empty
+            is_empty: is_empty,
         })
     }
 }

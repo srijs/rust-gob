@@ -1,22 +1,26 @@
 use std::io::Write;
 
-use serde::ser::{self, Serialize};
 use serde::de::value::Error;
+use serde::ser::{self, Serialize};
 
-use ::internal::ser::{SerializationCtx, SerializeStructValue};
-use ::internal::types::TypeId;
-use ::internal::gob::Writer;
+use internal::gob::Writer;
+use internal::ser::{SerializationCtx, SerializeStructValue};
+use internal::types::TypeId;
 
 pub struct SerializeStruct<'t, W> {
     inner: SerializeStructValue<'t>,
-    out: Writer<W>
+    out: Writer<W>,
 }
 
 impl<'t, W: Write> SerializeStruct<'t, W> {
-    pub(crate) fn new(type_id: TypeId, ctx: SerializationCtx<'t>, out: Writer<W>) -> Result<Self, Error> {
+    pub(crate) fn new(
+        type_id: TypeId,
+        ctx: SerializationCtx<'t>,
+        out: Writer<W>,
+    ) -> Result<Self, Error> {
         Ok(SerializeStruct {
             inner: SerializeStructValue::new(ctx, type_id)?,
-            out
+            out,
         })
     }
 }
@@ -25,8 +29,13 @@ impl<'t, W: Write> ser::SerializeStruct for SerializeStruct<'t, W> {
     type Ok = ();
     type Error = Error;
 
-    fn serialize_field<T: ?Sized>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
-        where T: Serialize
+    fn serialize_field<T: ?Sized>(
+        &mut self,
+        key: &'static str,
+        value: &T,
+    ) -> Result<(), Self::Error>
+    where
+        T: Serialize,
     {
         self.inner.serialize_field(key, value)
     }

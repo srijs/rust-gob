@@ -1,14 +1,14 @@
-use std::collections::{BinaryHeap, BTreeMap, BTreeSet, HashMap, HashSet, LinkedList, VecDeque};
 use std::borrow::Cow;
-use std::hash::{Hash, BuildHasher};
+use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, LinkedList, VecDeque};
+use std::hash::{BuildHasher, Hash};
 
 use serde::ser::Serialize;
 
 #[cfg(feature = "bytes")]
 use serde_bytes::{ByteBuf, Bytes};
 
-use ::{Schema, SchemaSerializer};
-use ::types::{Type, TypeId, StructField};
+use types::{StructField, Type, TypeId};
+use {Schema, SchemaSerializer};
 
 pub trait SchemaSerialize: Serialize {
     fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error>;
@@ -26,14 +26,14 @@ pub trait SchemaSerialize: Serialize {
 // ## Primitive Types
 
 macro_rules! primitive_impl {
-    ($t: ty, $id: tt) => {
+    ($t:ty, $id:tt) => {
         impl SchemaSerialize for $t {
             #[inline]
             fn schema_register<S: Schema>(_: &mut S) -> Result<S::TypeId, S::Error> {
                 Ok(TypeId::$id)
             }
         }
-    }
+    };
 }
 
 primitive_impl!(bool, BOOL);
@@ -66,7 +66,6 @@ impl SchemaSerialize for String {
         Ok(TypeId::STR)
     }
 }
-
 
 // ## Bytes
 
@@ -101,7 +100,9 @@ impl<T: SchemaSerialize> SchemaSerialize for Option<T> {
 impl<T> SchemaSerialize for ::std::marker::PhantomData<T> {
     #[inline]
     fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-        schema.register_type(Type::UnitStruct { name: Cow::Borrowed("PhantomData") })
+        schema.register_type(Type::UnitStruct {
+            name: Cow::Borrowed("PhantomData"),
+        })
     }
 }
 
@@ -134,14 +135,19 @@ impl<T: SchemaSerialize> SchemaSerialize for [T] {
     #[inline]
     fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
         let id = T::schema_register(schema)?;
-        schema.register_type(Type::Seq { len: None, element: id })
+        schema.register_type(Type::Seq {
+            len: None,
+            element: id,
+        })
     }
 }
 
 // ## Sequence Collections
 
 macro_rules! seq_impl {
-    ($ty:ident < T $(: $tbound1:ident $(+ $tbound2:ident)*)* $(, $typaram:ident : $bound:ident)* >) => {
+    ($ty:ident <
+        T $(: $tbound1:ident $(+ $tbound2:ident)*)* $(, $typaram:ident : $bound:ident)*
+    >) => {
         impl<T $(, $typaram)*> SchemaSerialize for $ty<T $(, $typaram)*>
         where
             T: SchemaSerialize $(+ $tbound1 $(+ $tbound2)*)*,
@@ -171,9 +177,15 @@ impl<Idx: SchemaSerialize> SchemaSerialize for ::std::ops::Range<Idx> {
         schema.register_type(Type::Struct {
             name: Cow::Borrowed("Range"),
             fields: Cow::Owned(vec![
-                StructField { name: Cow::Borrowed("start"), id: id.clone() },
-                StructField { name: Cow::Borrowed("end"), id }
-            ])
+                StructField {
+                    name: Cow::Borrowed("start"),
+                    id: id.clone(),
+                },
+                StructField {
+                    name: Cow::Borrowed("end"),
+                    id,
+                },
+            ]),
         })
     }
 }
@@ -226,13 +238,17 @@ tuple_impls! {
     13 => (0 T0 1 T1 2 T2 3 T3 4 T4 5 T5 6 T6 7 T7 8 T8 9 T9 10 T10 11 T11 12 T12)
     14 => (0 T0 1 T1 2 T2 3 T3 4 T4 5 T5 6 T6 7 T7 8 T8 9 T9 10 T10 11 T11 12 T12 13 T13)
     15 => (0 T0 1 T1 2 T2 3 T3 4 T4 5 T5 6 T6 7 T7 8 T8 9 T9 10 T10 11 T11 12 T12 13 T13 14 T14)
-    16 => (0 T0 1 T1 2 T2 3 T3 4 T4 5 T5 6 T6 7 T7 8 T8 9 T9 10 T10 11 T11 12 T12 13 T13 14 T14 15 T15)
+    16 => (0 T0 1 T1 2 T2 3 T3 4 T4 5 T5 6 T6 7 T7 8 T8 9 T9 10 T10 11 T11 12 T12 13 T13 14 T14
+        15 T15)
 }
 
 // ## Map Collections
 
 macro_rules! map_impl {
-    ($ty:ident < K $(: $kbound1:ident $(+ $kbound2:ident)*)*, V $(, $typaram:ident : $bound:ident)* >) => {
+    ($ty:ident <
+        K $(: $kbound1:ident $(+ $kbound2:ident)*)*,
+        V $(, $typaram:ident : $bound:ident)*
+    >) => {
         impl<K, V $(, $typaram)*> SchemaSerialize for $ty<K, V $(, $typaram)*>
         where
             K: SchemaSerialize $(+ $kbound1 $(+ $kbound2)*)*,

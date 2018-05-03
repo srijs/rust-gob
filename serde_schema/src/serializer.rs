@@ -1,7 +1,7 @@
 use serde::ser::{Error, Serializer};
 
-use ::Schema;
-use ::types::TypeId;
+use types::TypeId;
+use Schema;
 
 pub trait SchemaSerializer {
     type Ok;

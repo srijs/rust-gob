@@ -1,22 +1,27 @@
 use std::io::Write;
 
-use serde::ser::{self, Serialize};
 use serde::de::value::Error;
+use serde::ser::{self, Serialize};
 
-use ::internal::ser::{SerializationCtx, SerializeSeqValue};
-use ::internal::types::TypeId;
-use ::internal::gob::Writer;
+use internal::gob::Writer;
+use internal::ser::{SerializationCtx, SerializeSeqValue};
+use internal::types::TypeId;
 
 pub struct SerializeSeq<'t, W> {
     inner: SerializeSeqValue<'t>,
-    out: Writer<W>
+    out: Writer<W>,
 }
 
 impl<'t, W: Write> SerializeSeq<'t, W> {
-    pub(crate) fn new(len: Option<usize>, type_id: TypeId, ctx: SerializationCtx<'t>, out: Writer<W>) -> Result<Self, Error> {
+    pub(crate) fn new(
+        len: Option<usize>,
+        type_id: TypeId,
+        ctx: SerializationCtx<'t>,
+        out: Writer<W>,
+    ) -> Result<Self, Error> {
         Ok(SerializeSeq {
             inner: SerializeSeqValue::new(ctx, len, type_id)?,
-            out
+            out,
         })
     }
 }
@@ -26,7 +31,8 @@ impl<'t, W: Write> ser::SerializeSeq for SerializeSeq<'t, W> {
     type Error = Error;
 
     fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
-        where T: Serialize
+    where
+        T: Serialize,
     {
         self.inner.serialize_element(value)
     }

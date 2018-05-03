@@ -20,11 +20,11 @@ pub(crate) use self::struct_type::{FieldType, StructType};
 mod map_type;
 pub(crate) use self::map_type::MapType;
 
-pub use ::schema::TypeId;
+pub use schema::TypeId;
 
 #[derive(Debug)]
 pub struct Types {
-    map: BTreeMap<TypeId, WireType>
+    map: BTreeMap<TypeId, WireType>,
 }
 
 pub(crate) fn lookup_builtin(id: TypeId) -> Option<&'static Type<TypeId>> {
@@ -37,7 +37,7 @@ pub(crate) fn lookup_builtin(id: TypeId) -> Option<&'static Type<TypeId>> {
         TypeId::STRUCT_TYPE => Some(&self::struct_type::STRUCT_TYPE_DEF),
         TypeId::WIRE_TYPE => Some(&self::wire_type::WIRE_TYPE_DEF),
         TypeId::COMMON_TYPE => Some(&self::common_type::COMMON_TYPE_DEF),
-        _ => None
+        _ => None,
     }
 }
 
@@ -51,13 +51,15 @@ pub(crate) fn lookup_builtin2(id: TypeId) -> Option<&'static WireType> {
         TypeId::STRUCT_TYPE => Some(&self::struct_type::STRUCT_TYPE_DEF_2),
         TypeId::WIRE_TYPE => Some(&self::wire_type::WIRE_TYPE_DEF_2),
         TypeId::COMMON_TYPE => Some(&self::common_type::COMMON_TYPE_DEF_2),
-        _ => None
+        _ => None,
     }
 }
 
 impl Types {
     pub fn new() -> Types {
-        Types { map: BTreeMap::new() }
+        Types {
+            map: BTreeMap::new(),
+        }
     }
 
     pub(crate) fn insert(&mut self, def: WireType) {

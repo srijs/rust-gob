@@ -1,22 +1,28 @@
 use std::borrow::Cow;
 use std::marker::PhantomData;
 
-use ::types::*;
+use types::*;
 
 pub struct StructBuilder<T: TypeId> {
     name: &'static str,
-    fields: Vec<StructField<T>>
+    fields: Vec<StructField<T>>,
 }
 
 impl<T: TypeId> StructBuilder<T> {
     #[inline]
     pub(crate) fn new(name: &'static str, len: usize) -> Self {
-        StructBuilder { name, fields: Vec::with_capacity(len) }
+        StructBuilder {
+            name,
+            fields: Vec::with_capacity(len),
+        }
     }
 
     #[inline]
     pub fn field(mut self, name: &'static str, id: T) -> Self {
-        self.fields.push(StructField { name: Cow::Borrowed(name), id });
+        self.fields.push(StructField {
+            name: Cow::Borrowed(name),
+            id,
+        });
         self
     }
 
@@ -24,19 +30,21 @@ impl<T: TypeId> StructBuilder<T> {
     pub fn end(self) -> Type<T> {
         Type::Struct {
             name: Cow::Borrowed(self.name),
-            fields: Cow::Owned(self.fields)
+            fields: Cow::Owned(self.fields),
         }
     }
 }
 
 pub struct TupleBuilder<T: TypeId> {
-    elements: Vec<T>
+    elements: Vec<T>,
 }
 
 impl<T: TypeId> TupleBuilder<T> {
     #[inline]
     pub(crate) fn new(len: usize) -> Self {
-        TupleBuilder { elements: Vec::with_capacity(len) }
+        TupleBuilder {
+            elements: Vec::with_capacity(len),
+        }
     }
 
     #[inline]
@@ -48,20 +56,23 @@ impl<T: TypeId> TupleBuilder<T> {
     #[inline]
     pub fn end(self) -> Type<T> {
         Type::Tuple {
-            elements: Cow::Owned(self.elements)
+            elements: Cow::Owned(self.elements),
         }
     }
 }
 
 pub struct TupleStructBuilder<T: TypeId> {
     name: &'static str,
-    elements: Vec<T>
+    elements: Vec<T>,
 }
 
 impl<T: TypeId> TupleStructBuilder<T> {
     #[inline]
     pub(crate) fn new(name: &'static str, len: usize) -> Self {
-        TupleStructBuilder { name, elements: Vec::with_capacity(len) }
+        TupleStructBuilder {
+            name,
+            elements: Vec::with_capacity(len),
+        }
     }
 
     #[inline]
@@ -74,7 +85,7 @@ impl<T: TypeId> TupleStructBuilder<T> {
     pub fn end(self) -> Type<T> {
         Type::TupleStruct {
             name: Cow::Borrowed(self.name),
-            elements: Cow::Owned(self.elements)
+            elements: Cow::Owned(self.elements),
         }
     }
 }
@@ -82,13 +93,16 @@ impl<T: TypeId> TupleStructBuilder<T> {
 pub struct StructVariantBuilder<T: TypeId> {
     name: &'static str,
     fields: Vec<StructField<T>>,
-    enum_builder: EnumBuilder<T>
+    enum_builder: EnumBuilder<T>,
 }
 
 impl<T: TypeId> StructVariantBuilder<T> {
     #[inline]
     pub fn field(mut self, name: &'static str, id: T) -> Self {
-        self.fields.push(StructField { name: Cow::Borrowed(name), id });
+        self.fields.push(StructField {
+            name: Cow::Borrowed(name),
+            id,
+        });
         self
     }
 
@@ -96,7 +110,7 @@ impl<T: TypeId> StructVariantBuilder<T> {
     pub fn end(mut self) -> EnumBuilder<T> {
         self.enum_builder.variants.push(EnumVariant::Struct {
             name: Cow::Borrowed(self.name),
-            fields: Cow::Owned(self.fields)
+            fields: Cow::Owned(self.fields),
         });
         self.enum_builder
     }
@@ -105,7 +119,7 @@ impl<T: TypeId> StructVariantBuilder<T> {
 pub struct TupleVariantBuilder<T: TypeId> {
     name: &'static str,
     elements: Vec<T>,
-    enum_builder: EnumBuilder<T>
+    enum_builder: EnumBuilder<T>,
 }
 
 impl<T: TypeId> TupleVariantBuilder<T> {
@@ -119,7 +133,7 @@ impl<T: TypeId> TupleVariantBuilder<T> {
     pub fn end(mut self) -> EnumBuilder<T> {
         self.enum_builder.variants.push(EnumVariant::Tuple {
             name: Cow::Borrowed(self.name),
-            elements: Cow::Owned(self.elements)
+            elements: Cow::Owned(self.elements),
         });
         self.enum_builder
     }
@@ -127,19 +141,22 @@ impl<T: TypeId> TupleVariantBuilder<T> {
 
 pub struct EnumBuilder<T: TypeId> {
     name: &'static str,
-    variants: Vec<EnumVariant<T>>
+    variants: Vec<EnumVariant<T>>,
 }
 
 impl<T: TypeId> EnumBuilder<T> {
     #[inline]
     pub(crate) fn new(name: &'static str, len: usize) -> Self {
-        EnumBuilder { name, variants: Vec::with_capacity(len) }
+        EnumBuilder {
+            name,
+            variants: Vec::with_capacity(len),
+        }
     }
 
     #[inline]
     pub fn unit_variant(mut self, name: &'static str) -> Self {
         self.variants.push(EnumVariant::Unit {
-            name: Cow::Borrowed(name)
+            name: Cow::Borrowed(name),
         });
         self
     }
@@ -148,7 +165,7 @@ impl<T: TypeId> EnumBuilder<T> {
     pub fn newtype_variant(mut self, name: &'static str, id: T) -> Self {
         self.variants.push(EnumVariant::Newtype {
             name: Cow::Borrowed(name),
-            value: id
+            value: id,
         });
         self
     }
@@ -156,14 +173,18 @@ impl<T: TypeId> EnumBuilder<T> {
     #[inline]
     pub fn tuple_variant(self, name: &'static str, len: usize) -> TupleVariantBuilder<T> {
         TupleVariantBuilder {
-            name, elements: Vec::with_capacity(len), enum_builder: self
+            name,
+            elements: Vec::with_capacity(len),
+            enum_builder: self,
         }
     }
 
     #[inline]
     pub fn struct_variant(self, name: &'static str, len: usize) -> StructVariantBuilder<T> {
         StructVariantBuilder {
-            name, fields: Vec::with_capacity(len), enum_builder: self
+            name,
+            fields: Vec::with_capacity(len),
+            enum_builder: self,
         }
     }
 
@@ -171,13 +192,13 @@ impl<T: TypeId> EnumBuilder<T> {
     pub fn end(self) -> Type<T> {
         Type::Enum {
             name: Cow::Borrowed(self.name),
-            variants: Cow::Owned(self.variants)
+            variants: Cow::Owned(self.variants),
         }
     }
 }
 
 pub struct TypeBuilder<T: TypeId> {
-    _phan: PhantomData<T>
+    _phan: PhantomData<T>,
 }
 
 impl<T: TypeId> TypeBuilder<T> {
@@ -193,12 +214,17 @@ impl<T: TypeId> TypeBuilder<T> {
 
     #[inline]
     pub fn unit_struct_type(self, name: &'static str) -> Type<T> {
-        Type::UnitStruct { name: Cow::Borrowed(name) }
+        Type::UnitStruct {
+            name: Cow::Borrowed(name),
+        }
     }
 
     #[inline]
     pub fn newtype_struct_type(self, name: &'static str, value: T) -> Type<T> {
-        Type::NewtypeStruct { name: Cow::Borrowed(name), value }
+        Type::NewtypeStruct {
+            name: Cow::Borrowed(name),
+            value,
+        }
     }
 
     #[inline]
@@ -231,4 +257,3 @@ impl<T: TypeId> TypeBuilder<T> {
         EnumBuilder::new(name, len)
     }
 }
-

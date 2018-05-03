@@ -24,28 +24,63 @@ pub trait TypeId: Clone + 'static {
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct StructField<T: TypeId> {
     pub name: Cow<'static, str>,
-    pub id: T
+    pub id: T,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum EnumVariant<T: TypeId> {
-    Unit { name: Cow<'static, str> },
-    Newtype { name: Cow<'static, str>, value: T },
-    Tuple { name: Cow<'static, str>, elements: Cow<'static, [T]> },
-    Struct { name: Cow<'static, str>, fields: Cow<'static, [StructField<T>]> }
+    Unit {
+        name: Cow<'static, str>,
+    },
+    Newtype {
+        name: Cow<'static, str>,
+        value: T,
+    },
+    Tuple {
+        name: Cow<'static, str>,
+        elements: Cow<'static, [T]>,
+    },
+    Struct {
+        name: Cow<'static, str>,
+        fields: Cow<'static, [StructField<T>]>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Type<T: TypeId> {
-    Option { value: T },
-    UnitStruct { name: Cow<'static, str> },
-    NewtypeStruct { name: Cow<'static, str>, value: T },
-    Seq { len: Option<usize>, element: T },
-    Tuple { elements: Cow<'static, [T]> },
-    TupleStruct { name: Cow<'static, str>, elements: Cow<'static, [T]> },
-    Map { key: T, value: T },
-    Struct { name: Cow<'static, str>, fields: Cow<'static, [StructField<T>]> },
-    Enum { name: Cow<'static, str>, variants: Cow<'static, [EnumVariant<T>]> }
+    Option {
+        value: T,
+    },
+    UnitStruct {
+        name: Cow<'static, str>,
+    },
+    NewtypeStruct {
+        name: Cow<'static, str>,
+        value: T,
+    },
+    Seq {
+        len: Option<usize>,
+        element: T,
+    },
+    Tuple {
+        elements: Cow<'static, [T]>,
+    },
+    TupleStruct {
+        name: Cow<'static, str>,
+        elements: Cow<'static, [T]>,
+    },
+    Map {
+        key: T,
+        value: T,
+    },
+    Struct {
+        name: Cow<'static, str>,
+        fields: Cow<'static, [StructField<T>]>,
+    },
+    Enum {
+        name: Cow<'static, str>,
+        variants: Cow<'static, [EnumVariant<T>]>,
+    },
 }
 
 impl<T: TypeId> Type<T> {

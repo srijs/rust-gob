@@ -1,22 +1,26 @@
 use std::io::Write;
 
-use serde::ser::{self, Serialize};
 use serde::de::value::Error;
+use serde::ser::{self, Serialize};
 
-use ::internal::ser::{SerializationCtx, SerializeTupleValue};
-use ::internal::types::TypeId;
-use ::internal::gob::Writer;
+use internal::gob::Writer;
+use internal::ser::{SerializationCtx, SerializeTupleValue};
+use internal::types::TypeId;
 
 pub struct SerializeTuple<'t, W> {
     inner: SerializeTupleValue<'t>,
-    out: Writer<W>
+    out: Writer<W>,
 }
 
 impl<'t, W: Write> SerializeTuple<'t, W> {
-    pub(crate) fn homogeneous(type_id: TypeId, ctx: SerializationCtx<'t>, out: Writer<W>) -> Result<Self, Error> {
+    pub(crate) fn homogeneous(
+        type_id: TypeId,
+        ctx: SerializationCtx<'t>,
+        out: Writer<W>,
+    ) -> Result<Self, Error> {
         Ok(SerializeTuple {
             inner: SerializeTupleValue::homogeneous(ctx, type_id)?,
-            out
+            out,
         })
     }
 }
@@ -26,7 +30,8 @@ impl<'t, W: Write> ser::SerializeTuple for SerializeTuple<'t, W> {
     type Error = Error;
 
     fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>
-        where T: Serialize
+    where
+        T: Serialize,
     {
         self.inner.serialize_element(value)
     }

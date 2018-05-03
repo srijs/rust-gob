@@ -1,7 +1,8 @@
 extern crate gob;
 extern crate serde;
 extern crate serde_bytes;
-#[macro_use] extern crate serde_derive;
+#[macro_use]
+extern crate serde_derive;
 extern crate serde_schema;
 
 use std::borrow::Cow;
@@ -9,8 +10,8 @@ use std::collections::BTreeMap;
 
 use gob::StreamSerializer;
 use serde_bytes::Bytes;
+use serde_schema::types::{StructField, Type, TypeId};
 use serde_schema::{Schema, SchemaSerialize};
-use serde_schema::types::{Type, TypeId, StructField};
 
 #[test]
 fn bool_true() {
@@ -44,7 +45,7 @@ fn u8_zero() {
 
 #[test]
 fn u16_zero() {
-        let mut buffer = Vec::new();
+    let mut buffer = Vec::new();
     {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&0u16).unwrap();
@@ -54,7 +55,7 @@ fn u16_zero() {
 
 #[test]
 fn u32_zero() {
-        let mut buffer = Vec::new();
+    let mut buffer = Vec::new();
     {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&0u32).unwrap();
@@ -64,7 +65,7 @@ fn u32_zero() {
 
 #[test]
 fn u64_zero() {
-        let mut buffer = Vec::new();
+    let mut buffer = Vec::new();
     {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&0u64).unwrap();
@@ -99,7 +100,10 @@ fn u64_max() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&::std::u64::MAX).unwrap();
     }
-    assert_eq!(buffer, &[11, 6, 0, 248, 255, 255, 255, 255, 255, 255, 255, 255]);
+    assert_eq!(
+        buffer,
+        &[11, 6, 0, 248, 255, 255, 255, 255, 255, 255, 255, 255]
+    );
 }
 
 #[test]
@@ -189,7 +193,10 @@ fn i64_min() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&::std::i64::MIN).unwrap();
     }
-    assert_eq!(buffer, &[11, 4, 0, 248, 255, 255, 255, 255, 255, 255, 255, 255]);
+    assert_eq!(
+        buffer,
+        &[11, 4, 0, 248, 255, 255, 255, 255, 255, 255, 255, 255]
+    );
 }
 
 #[test]
@@ -199,7 +206,10 @@ fn i64_max() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&::std::i64::MAX).unwrap();
     }
-    assert_eq!(buffer, &[11, 4, 0, 248, 255, 255, 255, 255, 255, 255, 255, 254]);
+    assert_eq!(
+        buffer,
+        &[11, 4, 0, 248, 255, 255, 255, 255, 255, 255, 255, 254]
+    );
 }
 
 #[test]
@@ -309,8 +319,12 @@ fn vec_of_bool_to_empty_slice() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&Vec::<bool>::new()).unwrap();
     }
-    assert_eq!(buffer,
-        &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0]);
+    assert_eq!(
+        buffer,
+        &[
+            12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0
+        ]
+    );
 }
 
 #[test]
@@ -320,8 +334,12 @@ fn vec_of_bool_to_non_empty_slice() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&vec![true, false]).unwrap();
     }
-    assert_eq!(buffer,
-        &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 6, 255, 130, 0, 2, 1, 0]);
+    assert_eq!(
+        buffer,
+        &[
+            12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 6, 255, 130, 0, 2, 1, 0
+        ]
+    );
 }
 
 #[test]
@@ -331,8 +349,12 @@ fn vec_of_bool_to_empty_array() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize::<[bool; 0]>(&[]).unwrap();
     }
-    assert_eq!(buffer,
-        &[12, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0]);
+    assert_eq!(
+        buffer,
+        &[
+            12, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0
+        ]
+    );
 }
 
 #[test]
@@ -342,8 +364,12 @@ fn vec_of_bool_to_non_empty_array() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&[true, false]).unwrap();
     }
-    assert_eq!(buffer,
-        &[14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0]);
+    assert_eq!(
+        buffer,
+        &[
+            14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0
+        ]
+    );
 }
 
 #[test]
@@ -354,8 +380,12 @@ fn vec_of_bool_to_empty_slice_twice() {
         stream.serialize(&Vec::<bool>::new()).unwrap();
         stream.serialize(&Vec::<bool>::new()).unwrap();
     }
-    assert_eq!(buffer,
-        &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0, 4, 255, 130, 0, 0]);
+    assert_eq!(
+        buffer,
+        &[
+            12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0, 4, 255, 130, 0, 0
+        ]
+    );
 }
 
 #[test]
@@ -365,8 +395,12 @@ fn map_empty() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&<BTreeMap<String, bool>>::new()).unwrap();
     }
-    assert_eq!(buffer,
-        &[14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 4, 255, 130, 0, 0]);
+    assert_eq!(
+        buffer,
+        &[
+            14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 4, 255, 130, 0, 0
+        ]
+    );
 }
 
 #[test]
@@ -379,14 +413,21 @@ fn map_non_empty() {
         map.insert("bar", false);
         stream.serialize(&map).unwrap();
     }
-    assert_eq!(buffer,
-        &[14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 14, 255, 130, 0, 2, 3, 98, 97, 114, 0, 3, 102, 111, 111, 1]);
+    assert_eq!(
+        buffer,
+        &[
+            14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 14, 255, 130, 0, 2, 3, 98, 97,
+            114, 0, 3, 102, 111, 111, 1,
+        ]
+    );
 }
 
 #[derive(Serialize)]
 struct Point {
-    #[serde(rename = "X")] x: i64,
-    #[serde(rename = "Y")] y: i64
+    #[serde(rename = "X")]
+    x: i64,
+    #[serde(rename = "Y")]
+    y: i64,
 }
 
 impl SchemaSerialize for Point {
@@ -394,9 +435,15 @@ impl SchemaSerialize for Point {
         schema.register_type(Type::Struct {
             name: Cow::Borrowed("Point"),
             fields: Cow::Owned(vec![
-                StructField { name: Cow::Borrowed("X"), id: TypeId::I64 },
-                StructField { name: Cow::Borrowed("Y"), id: TypeId::I64 },
-            ])
+                StructField {
+                    name: Cow::Borrowed("X"),
+                    id: TypeId::I64,
+                },
+                StructField {
+                    name: Cow::Borrowed("Y"),
+                    id: TypeId::I64,
+                },
+            ]),
         })
     }
 }
@@ -408,13 +455,14 @@ fn point_struct() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&Point { x: 22, y: 33 }).unwrap();
     }
-    assert_eq!(buffer, [
-        0x1f, 0xff, 0x81, 0x03, 0x01, 0x01, 0x05, 0x50,
-        0x6f, 0x69, 0x6e, 0x74, 0x01, 0xff, 0x82, 0x00,
-        0x01, 0x02, 0x01, 0x01, 0x58, 0x01, 0x04, 0x00,
-        0x01, 0x01, 0x59, 0x01, 0x04, 0x00, 0x00, 0x00,
-        0x07, 0xff, 0x82, 0x01, 0x2c, 0x01, 0x42, 0x00
-    ].as_ref());
+    assert_eq!(
+        buffer,
+        [
+            0x1f, 0xff, 0x81, 0x03, 0x01, 0x01, 0x05, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x01, 0xff,
+            0x82, 0x00, 0x01, 0x02, 0x01, 0x01, 0x58, 0x01, 0x04, 0x00, 0x01, 0x01, 0x59, 0x01,
+            0x04, 0x00, 0x00, 0x00, 0x07, 0xff, 0x82, 0x01, 0x2c, 0x01, 0x42, 0x00,
+        ].as_ref()
+    );
 }
 
 #[test]
@@ -424,29 +472,39 @@ fn point_struct_skip_x() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&Point { x: 0, y: 42 }).unwrap();
     }
-    assert_eq!(buffer, [
-        31, 255, 129, 3, 1, 1, 5, 80, 111, 105, 110, 116, 1, 255,
-        130, 0, 1, 2, 1, 1, 88, 1, 4, 0, 1, 1, 89, 1, 4, 0, 0, 0,
-        5, 255, 130, 2, 84, 0
-    ].as_ref());
+    assert_eq!(
+        buffer,
+        [
+            31, 255, 129, 3, 1, 1, 5, 80, 111, 105, 110, 116, 1, 255, 130, 0, 1, 2, 1, 1, 88, 1, 4,
+            0, 1, 1, 89, 1, 4, 0, 0, 0, 5, 255, 130, 2, 84, 0,
+        ].as_ref()
+    );
 }
 
 #[test]
 fn enum_with_newtype_variants_and_external_tags() {
     #[derive(Serialize)]
     enum Enum {
-        #[serde(rename = "Var1")] #[allow(unused)] V1(bool),
-        #[serde(rename = "Var2")] V2(i64),
-        #[serde(rename = "Var3")] #[allow(unused)] V3(String),
+        #[serde(rename = "Var1")]
+        #[allow(unused)]
+        V1(bool),
+        #[serde(rename = "Var2")]
+        V2(i64),
+        #[serde(rename = "Var3")]
+        #[allow(unused)]
+        V3(String),
     }
 
     impl SchemaSerialize for Enum {
         fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-            schema.register_type(Type::build().enum_type("Enum", 3)
-                .newtype_variant("Var1", TypeId::BOOL)
-                .newtype_variant("Var2", TypeId::I64)
-                .newtype_variant("Var3", TypeId::STR)
-                .end())
+            schema.register_type(
+                Type::build()
+                    .enum_type("Enum", 3)
+                    .newtype_variant("Var1", TypeId::BOOL)
+                    .newtype_variant("Var2", TypeId::I64)
+                    .newtype_variant("Var3", TypeId::STR)
+                    .end(),
+            )
         }
     }
 
@@ -455,37 +513,55 @@ fn enum_with_newtype_variants_and_external_tags() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&Enum::V2(42)).unwrap();
     }
-    assert_eq!(buffer, [
-        45, 255, 129, 3, 1, 1, 4, 69, 110, 117, 109, 1, 255, 130, 0, 1,
-        3, 1, 4, 86, 97, 114, 49, 1, 2, 0, 1, 4, 86, 97, 114, 50,
-        1, 4, 0, 1, 4, 86, 97, 114, 51, 1, 12, 0, 0, 0, 5, 255,
-        130, 2, 84, 0
-    ].as_ref());
+    assert_eq!(
+        buffer,
+        [
+            45, 255, 129, 3, 1, 1, 4, 69, 110, 117, 109, 1, 255, 130, 0, 1, 3, 1, 4, 86, 97, 114,
+            49, 1, 2, 0, 1, 4, 86, 97, 114, 50, 1, 4, 0, 1, 4, 86, 97, 114, 51, 1, 12, 0, 0, 0, 5,
+            255, 130, 2, 84, 0,
+        ].as_ref()
+    );
 }
 
 #[test]
 fn enum_with_struct_variants_and_external_tags() {
     #[derive(Serialize)]
     enum Enum {
-        #[allow(unused)] V1 { #[serde(rename="Foo")] foo: bool },
-        V2 { #[serde(rename="Bar")] bar: i64, #[serde(rename="Baz")] baz: u64 },
-        #[allow(unused)] V3 { #[serde(rename="Quux")] quux: String }
+        #[allow(unused)]
+        V1 {
+            #[serde(rename = "Foo")]
+            foo: bool,
+        },
+        V2 {
+            #[serde(rename = "Bar")]
+            bar: i64,
+            #[serde(rename = "Baz")]
+            baz: u64,
+        },
+        #[allow(unused)]
+        V3 {
+            #[serde(rename = "Quux")]
+            quux: String,
+        },
     }
 
     impl SchemaSerialize for Enum {
         fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-            schema.register_type(Type::build().enum_type("Enum", 3)
-                .struct_variant("V1", 1)
+            schema.register_type(
+                Type::build()
+                    .enum_type("Enum", 3)
+                    .struct_variant("V1", 1)
                     .field("Foo", TypeId::BOOL)
                     .end()
-                .struct_variant("V2", 2)
+                    .struct_variant("V2", 2)
                     .field("Bar", TypeId::I64)
                     .field("Baz", TypeId::U64)
                     .end()
-                .struct_variant("V3", 1)
+                    .struct_variant("V3", 1)
                     .field("Quux", TypeId::STR)
                     .end()
-                .end())
+                    .end(),
+            )
         }
     }
 
@@ -494,15 +570,15 @@ fn enum_with_struct_variants_and_external_tags() {
         let mut stream = StreamSerializer::new(&mut buffer);
         stream.serialize(&Enum::V2 { bar: 42, baz: 1234 }).unwrap();
     }
-    assert_eq!(buffer, [
-        42, 255, 129, 3, 1, 1, 4, 69, 110, 117, 109, 1, 255, 130, 0,
-        1, 3, 1, 2, 86, 49, 1, 255, 132, 0, 1, 2, 86, 50, 1, 255, 134,
-        0, 1, 2, 86, 51, 1, 255, 136, 0, 0, 0, 24, 255, 131, 3, 1, 1,
-        2, 86, 49, 1, 255, 132, 0, 1, 1, 1, 3, 70, 111, 111, 1, 2, 0,
-        0, 0, 32, 255, 133, 3, 1, 1, 2, 86, 50, 1, 255, 134, 0, 1, 2,
-        1, 3, 66, 97, 114, 1, 4, 0, 1, 3, 66, 97, 122, 1, 6, 0, 0, 0,
-        25, 255, 135, 3, 1, 1, 2, 86, 51, 1, 255, 136, 0, 1, 1, 1, 4,
-        81, 117, 117, 120, 1, 12, 0, 0, 0, 11, 255, 130, 2, 1, 84, 1,
-        254, 4, 210, 0, 0
-    ].as_ref());
+    assert_eq!(
+        buffer,
+        [
+            42, 255, 129, 3, 1, 1, 4, 69, 110, 117, 109, 1, 255, 130, 0, 1, 3, 1, 2, 86, 49, 1,
+            255, 132, 0, 1, 2, 86, 50, 1, 255, 134, 0, 1, 2, 86, 51, 1, 255, 136, 0, 0, 0, 24, 255,
+            131, 3, 1, 1, 2, 86, 49, 1, 255, 132, 0, 1, 1, 1, 3, 70, 111, 111, 1, 2, 0, 0, 0, 32,
+            255, 133, 3, 1, 1, 2, 86, 50, 1, 255, 134, 0, 1, 2, 1, 3, 66, 97, 114, 1, 4, 0, 1, 3,
+            66, 97, 122, 1, 6, 0, 0, 0, 25, 255, 135, 3, 1, 1, 2, 86, 51, 1, 255, 136, 0, 1, 1, 1,
+            4, 81, 117, 117, 120, 1, 12, 0, 0, 0, 11, 255, 130, 2, 1, 84, 1, 254, 4, 210, 0, 0,
+        ].as_ref()
+    );
 }

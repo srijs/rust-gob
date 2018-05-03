@@ -1,14 +1,14 @@
 use std::io::Write;
 
-use serde::Serialize;
-use serde::ser::{self, Impossible};
 use serde::de::value::Error;
+use serde::ser::{self, Impossible};
+use serde::Serialize;
 
-use ::internal::utils::Bow;
-use ::internal::gob::{Message, Writer};
-use ::internal::types::TypeId;
+use internal::gob::{Message, Writer};
+use internal::types::TypeId;
+use internal::utils::Bow;
 
-use ::schema::Schema;
+use schema::Schema;
 
 mod serialize_struct;
 pub(crate) use self::serialize_struct::SerializeStructValue;
@@ -19,21 +19,18 @@ pub(crate) use self::serialize_tuple::SerializeTupleValue;
 mod serialize_map;
 pub(crate) use self::serialize_map::SerializeMapValue;
 mod serialize_variant;
-pub(crate) use self::serialize_variant::{
-    SerializeVariantValue,
-    SerializeStructVariantValue
-};
+pub(crate) use self::serialize_variant::{SerializeStructVariantValue, SerializeVariantValue};
 mod serialize_wire_types;
 pub(crate) use self::serialize_wire_types::SerializeWireTypes;
 
 pub(crate) struct SerializationOk<'t> {
     pub ctx: SerializationCtx<'t>,
-    pub is_empty: bool
+    pub is_empty: bool,
 }
 
 pub(crate) struct SerializationCtx<'t> {
     pub schema: Bow<'t, Schema>,
-    pub value: Message<Vec<u8>>
+    pub value: Message<Vec<u8>>,
 }
 
 impl<'t> SerializationCtx<'t> {
@@ -44,28 +41,33 @@ impl<'t> SerializationCtx<'t> {
     pub(crate) fn with_schema(schema: Bow<'t, Schema>) -> Self {
         SerializationCtx {
             schema,
-            value: Message::new(Vec::new())
+            value: Message::new(Vec::new()),
         }
     }
 
-    pub(crate) fn flush<W: Write>(&mut self, type_id: TypeId, mut writer: Writer<W>) -> Result<(), Error> {
+    pub(crate) fn flush<W: Write>(
+        &mut self,
+        type_id: TypeId,
+        mut writer: Writer<W>,
+    ) -> Result<(), Error> {
         self.schema.write_pending(writer.borrow_mut())?;
-        writer.write_section(type_id.0,
-            self.value.get_ref())?;
+        writer.write_section(type_id.0, self.value.get_ref())?;
         Ok(())
     }
 }
 
 pub(crate) struct FieldValueSerializer<'t> {
     pub ctx: SerializationCtx<'t>,
-    pub type_id: TypeId
+    pub type_id: TypeId,
 }
 
 impl<'t> FieldValueSerializer<'t> {
     fn check_type(&self, got: TypeId) -> Result<(), Error> {
         if self.type_id != got {
-            Err(ser::Error::custom(format!("type id mismatch: got {}, expected {}",
-                got.0, self.type_id.0)))
+            Err(ser::Error::custom(format!(
+                "type id mismatch: got {}, expected {}",
+                got.0, self.type_id.0
+            )))
         } else {
             Ok(())
         }
@@ -90,7 +92,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         self.ctx.value.write_bool(v)?;
         Ok(SerializationOk {
             ctx: self.ctx,
-            is_empty: v == true
+            is_empty: v == true,
         })
     }
 
@@ -111,7 +113,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         self.ctx.value.write_int(v)?;
         Ok(SerializationOk {
             ctx: self.ctx,
-            is_empty: v == 0
+            is_empty: v == 0,
         })
     }
 
@@ -132,7 +134,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         self.ctx.value.write_uint(v)?;
         Ok(SerializationOk {
             ctx: self.ctx,
-            is_empty: v == 0
+            is_empty: v == 0,
         })
     }
 
@@ -145,7 +147,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         self.ctx.value.write_float(v)?;
         Ok(SerializationOk {
             ctx: self.ctx,
-            is_empty: false
+            is_empty: false,
         })
     }
 
@@ -158,7 +160,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         self.ctx.value.write_bytes(v.as_bytes())?;
         Ok(SerializationOk {
             ctx: self.ctx,
-            is_empty: v.len() == 0
+            is_empty: v.len() == 0,
         })
     }
 
@@ -167,7 +169,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         self.ctx.value.write_bytes(v)?;
         Ok(SerializationOk {
             ctx: self.ctx,
-            is_empty: v.len() == 0
+            is_empty: v.len() == 0,
         })
     }
 
@@ -176,7 +178,8 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
     }
 
     fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    where
+        T: Serialize,
     {
         Err(ser::Error::custom("not implemented yet"))
     }
@@ -189,18 +192,35 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_unit_variant(self, _name: &'static str, _variant_index: u32, _variant: &'static str) -> Result<Self::Ok, Self::Error> {
+    fn serialize_unit_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+    ) -> Result<Self::Ok, Self::Error> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_struct<T: ?Sized>(
+        self,
+        _name: &'static str,
+        _value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
     {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_newtype_variant<T: ?Sized>(self, _name: &'static str, variant_index: u32, _variant: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
-        where T: Serialize
+    fn serialize_newtype_variant<T: ?Sized>(
+        self,
+        _name: &'static str,
+        variant_index: u32,
+        _variant: &'static str,
+        value: &T,
+    ) -> Result<Self::Ok, Self::Error>
+    where
+        T: Serialize,
     {
         let ser = SerializeVariantValue::new(self.ctx, self.type_id, variant_index)?;
         ser.serialize_newtype(value)
@@ -214,11 +234,21 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         SerializeTupleValue::homogeneous(self.ctx, self.type_id)
     }
 
-    fn serialize_tuple_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeTupleStruct, Self::Error> {
+    fn serialize_tuple_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleStruct, Self::Error> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_tuple_variant(self, _name: &'static str, _variant_index: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeTupleVariant, Self::Error> {
+    fn serialize_tuple_variant(
+        self,
+        _name: &'static str,
+        _variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeTupleVariant, Self::Error> {
         Err(ser::Error::custom("tuple variants not implemented yet"))
     }
 
@@ -226,11 +256,21 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         SerializeMapValue::new(self.ctx, len, self.type_id)
     }
 
-    fn serialize_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeStruct, Self::Error> {
+    fn serialize_struct(
+        self,
+        _name: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStruct, Self::Error> {
         SerializeStructValue::new(self.ctx, self.type_id)
     }
 
-    fn serialize_struct_variant(self, _name: &'static str, variant_index: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeStructVariant, Self::Error> {
+    fn serialize_struct_variant(
+        self,
+        _name: &'static str,
+        variant_index: u32,
+        _variant: &'static str,
+        _len: usize,
+    ) -> Result<Self::SerializeStructVariant, Self::Error> {
         let ser = SerializeVariantValue::new(self.ctx, self.type_id, variant_index)?;
         ser.serialize_struct()
     }

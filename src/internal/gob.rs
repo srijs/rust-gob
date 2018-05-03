@@ -6,11 +6,11 @@ use bytes::{BigEndian, Buf, BufMut};
 pub(crate) enum Error {
     IncompleteMessage,
     IntegerOverflow,
-    Io(io::Error)
+    Io(io::Error),
 }
 
 pub(crate) struct Message<B> {
-    buf: B
+    buf: B,
 }
 
 impl<B> Message<B> {
@@ -71,7 +71,7 @@ impl<B: Buf> Message<B> {
         match self.read_uint()? {
             0 => Ok(false),
             1 => Ok(true),
-            _ => Err(Error::IntegerOverflow)
+            _ => Err(Error::IntegerOverflow),
         }
     }
 
@@ -102,7 +102,7 @@ impl<B: BufMut> Message<B> {
     pub fn write_bool(&mut self, b: bool) -> Result<(), Error> {
         match b {
             false => self.write_uint(0),
-            true => self.write_uint(1)
+            true => self.write_uint(1),
         }
     }
 
@@ -110,7 +110,7 @@ impl<B: BufMut> Message<B> {
     pub fn write_int(&mut self, n: i64) -> Result<(), Error> {
         let u: u64;
         if n < 0 {
-		    u = (!(n as u64) << 1) | 1;
+            u = (!(n as u64) << 1) | 1;
         } else {
             u = (n as u64) << 1;
         }
@@ -132,7 +132,7 @@ impl<B: BufMut> Message<B> {
 }
 
 pub(crate) struct Writer<W> {
-    inner: W
+    inner: W,
 }
 
 impl<W> Writer<W> {
@@ -159,8 +159,7 @@ impl<W> Writer<W> {
 
 impl<W: Write> Writer<W> {
     fn write_buf(&mut self, buf: &[u8]) -> Result<(), Error> {
-        self.inner.write_all(buf)
-            .map_err(|err| Error::Io(err))
+        self.inner.write_all(buf).map_err(|err| Error::Io(err))
     }
 
     pub fn write_section(&mut self, type_id: i64, buf: &[u8]) -> Result<(), Error> {

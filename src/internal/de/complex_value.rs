@@ -1,19 +1,25 @@
 use std::io::Cursor;
 
-use serde::de::{Deserializer, DeserializeSeed, IntoDeserializer, SeqAccess, Visitor};
 use serde::de::value::Error;
+use serde::de::{DeserializeSeed, Deserializer, IntoDeserializer, SeqAccess, Visitor};
 
-use ::internal::gob::Message;
+use internal::gob::Message;
 
-struct ComplexSeqAccess<'t, 'de> where 'de: 't {
+struct ComplexSeqAccess<'t, 'de>
+where
+    'de: 't,
+{
     remaining_count: u64,
-    msg: &'t mut Message<Cursor<&'de [u8]>>
+    msg: &'t mut Message<Cursor<&'de [u8]>>,
 }
 
 impl<'t, 'de> ComplexSeqAccess<'t, 'de> {
     #[inline]
     fn new(msg: &'t mut Message<Cursor<&'de [u8]>>) -> ComplexSeqAccess<'t, 'de> {
-        ComplexSeqAccess { remaining_count: 2, msg }
+        ComplexSeqAccess {
+            remaining_count: 2,
+            msg,
+        }
     }
 }
 
@@ -21,7 +27,8 @@ impl<'t, 'de> SeqAccess<'de> for ComplexSeqAccess<'t, 'de> {
     type Error = Error;
 
     fn next_element_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
-        where T: DeserializeSeed<'de>
+    where
+        T: DeserializeSeed<'de>,
     {
         if self.remaining_count == 0 {
             return Ok(None);
@@ -36,13 +43,18 @@ impl<'t, 'de> SeqAccess<'de> for ComplexSeqAccess<'t, 'de> {
     }
 }
 
-pub(crate) struct ComplexValueDeserializer<'t, 'de> where 'de: 't {
-    msg: &'t mut Message<Cursor<&'de [u8]>>
+pub(crate) struct ComplexValueDeserializer<'t, 'de>
+where
+    'de: 't,
+{
+    msg: &'t mut Message<Cursor<&'de [u8]>>,
 }
 
 impl<'t, 'de> ComplexValueDeserializer<'t, 'de> {
     #[inline]
-    pub(crate) fn new(msg: &'t mut Message<Cursor<&'de [u8]>>) -> ComplexValueDeserializer<'t, 'de> {
+    pub(crate) fn new(
+        msg: &'t mut Message<Cursor<&'de [u8]>>,
+    ) -> ComplexValueDeserializer<'t, 'de> {
         ComplexValueDeserializer { msg }
     }
 }
@@ -52,7 +64,8 @@ impl<'t, 'de> Deserializer<'de> for ComplexValueDeserializer<'t, 'de> {
 
     #[inline]
     fn deserialize_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
+    where
+        V: Visitor<'de>,
     {
         visitor.visit_seq(ComplexSeqAccess::new(self.msg))
     }

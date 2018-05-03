@@ -1,23 +1,30 @@
 use std::io::Cursor;
 
 use serde;
-use serde::de::{Deserializer, Visitor};
 use serde::de::value::Error;
+use serde::de::{Deserializer, Visitor};
 
-use ::internal::gob::Message;
-use ::internal::types::{TypeId, Types, WireType};
+use internal::gob::Message;
+use internal::types::{TypeId, Types, WireType};
 
 use super::field_value::FieldValueDeserializer;
 use super::struct_value::StructValueDeserializer;
 
-pub(crate) struct ValueDeserializer<'t, 'de> where 'de: 't {
+pub(crate) struct ValueDeserializer<'t, 'de>
+where
+    'de: 't,
+{
     type_id: TypeId,
     defs: &'t Types,
-    msg: &'t mut Message<Cursor<&'de [u8]>>
+    msg: &'t mut Message<Cursor<&'de [u8]>>,
 }
 
 impl<'t, 'de> ValueDeserializer<'t, 'de> {
-    pub fn new(type_id: TypeId, defs: &'t Types, msg: &'t mut Message<Cursor<&'de [u8]>>) -> ValueDeserializer<'t, 'de> {
+    pub fn new(
+        type_id: TypeId,
+        defs: &'t Types,
+        msg: &'t mut Message<Cursor<&'de [u8]>>,
+    ) -> ValueDeserializer<'t, 'de> {
         ValueDeserializer { type_id, defs, msg }
     }
 }
@@ -26,7 +33,8 @@ impl<'t, 'de> Deserializer<'de> for ValueDeserializer<'t, 'de> {
     type Error = Error;
 
     fn deserialize_any<V>(mut self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
+    where
+        V: Visitor<'de>,
     {
         if let Some(&WireType::Struct(ref struct_type)) = self.defs.lookup(self.type_id) {
             let de = StructValueDeserializer::new(struct_type, &self.defs, &mut self.msg);
@@ -34,15 +42,23 @@ impl<'t, 'de> Deserializer<'de> for ValueDeserializer<'t, 'de> {
         }
 
         if self.msg.read_uint()? != 0 {
-            return Err(serde::de::Error::custom(format!("neither a singleton nor a struct value")));
+            return Err(serde::de::Error::custom(format!(
+                "neither a singleton nor a struct value"
+            )));
         }
 
         let de = FieldValueDeserializer::new(self.type_id, &self.defs, &mut self.msg);
         return de.deserialize_any(visitor);
     }
 
-    fn deserialize_enum<V>(mut self, name: &'static str, variants: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor<'de>
+    fn deserialize_enum<V>(
+        mut self,
+        name: &'static str,
+        variants: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
     {
         if let Some(&WireType::Struct(ref struct_type)) = self.defs.lookup(self.type_id) {
             let de = StructValueDeserializer::new(struct_type, &self.defs, &mut self.msg);
@@ -50,7 +66,9 @@ impl<'t, 'de> Deserializer<'de> for ValueDeserializer<'t, 'de> {
         }
 
         if self.msg.read_uint()? != 0 {
-            return Err(serde::de::Error::custom(format!("neither a singleton nor a struct value")));
+            return Err(serde::de::Error::custom(format!(
+                "neither a singleton nor a struct value"
+            )));
         }
 
         let de = FieldValueDeserializer::new(self.type_id, &self.defs, &mut self.msg);
