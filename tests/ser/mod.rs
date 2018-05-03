@@ -1,16 +1,11 @@
-extern crate gob;
-extern crate serde;
-extern crate serde_bytes;
-#[macro_use]
-extern crate serde_derive;
-extern crate serde_schema;
-
 use std::collections::BTreeMap;
 
 use gob::StreamSerializer;
 use serde_bytes::Bytes;
 use serde_schema::types::{Type, TypeId};
 use serde_schema::{Schema, SchemaSerialize};
+
+mod integration;
 
 #[test]
 fn bool_true() {
@@ -320,9 +315,7 @@ fn vec_of_bool_to_empty_slice() {
     }
     assert_eq!(
         buffer,
-        &[
-            12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0
-        ]
+        &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0,]
     );
 }
 
@@ -335,9 +328,7 @@ fn vec_of_bool_to_non_empty_slice() {
     }
     assert_eq!(
         buffer,
-        &[
-            12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 6, 255, 130, 0, 2, 1, 0
-        ]
+        &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 6, 255, 130, 0, 2, 1, 0,]
     );
 }
 
@@ -350,9 +341,7 @@ fn vec_of_bool_to_empty_array() {
     }
     assert_eq!(
         buffer,
-        &[
-            12, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0
-        ]
+        &[12, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0,]
     );
 }
 
@@ -365,9 +354,7 @@ fn vec_of_bool_to_non_empty_array() {
     }
     assert_eq!(
         buffer,
-        &[
-            14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0
-        ]
+        &[14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0,]
     );
 }
 
@@ -381,9 +368,7 @@ fn vec_of_bool_to_empty_slice_twice() {
     }
     assert_eq!(
         buffer,
-        &[
-            12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0, 4, 255, 130, 0, 0
-        ]
+        &[12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0, 4, 255, 130, 0, 0,]
     );
 }
 
@@ -413,9 +398,7 @@ fn map_empty() {
     }
     assert_eq!(
         buffer,
-        &[
-            14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 4, 255, 130, 0, 0
-        ]
+        &[14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 4, 255, 130, 0, 0,]
     );
 }
 

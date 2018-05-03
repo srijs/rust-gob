@@ -1,15 +1,11 @@
-extern crate gob;
-extern crate serde;
-extern crate serde_bytes;
-#[macro_use]
-extern crate serde_derive;
-
 use std::collections::HashMap;
 use std::io::Cursor;
 
 use gob::{Deserializer, StreamDeserializer};
 use serde::Deserialize;
 use serde_bytes::{ByteBuf, Bytes};
+
+mod integration;
 
 #[test]
 fn bool_true() {
@@ -262,7 +258,7 @@ fn string_non_empty() {
 #[test]
 fn vec_of_bool_from_empty_slice() {
     let deserializer = Deserializer::from_slice(&[
-        12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0
+        12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0,
     ]);
     let decoded = <Vec<bool>>::deserialize(deserializer).unwrap();
     assert_eq!(decoded, &[]);
@@ -271,7 +267,7 @@ fn vec_of_bool_from_empty_slice() {
 #[test]
 fn vec_of_bool_from_empty_array() {
     let deserializer = Deserializer::from_slice(&[
-        12, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0
+        12, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0,
     ]);
     let decoded = <Vec<bool>>::deserialize(deserializer).unwrap();
     assert_eq!(decoded, &[]);
@@ -280,7 +276,7 @@ fn vec_of_bool_from_empty_array() {
 #[test]
 fn vec_of_bool_from_non_empty_slice() {
     let deserializer = Deserializer::from_slice(&[
-        12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 6, 255, 130, 0, 2, 1, 0
+        12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 6, 255, 130, 0, 2, 1, 0,
     ]);
     let decoded = <Vec<bool>>::deserialize(deserializer).unwrap();
     assert_eq!(decoded, &[true, false]);
@@ -289,7 +285,7 @@ fn vec_of_bool_from_non_empty_slice() {
 #[test]
 fn vec_of_bool_from_non_empty_array() {
     let deserializer = Deserializer::from_slice(&[
-        14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0
+        14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0,
     ]);
     let decoded = <Vec<bool>>::deserialize(deserializer).unwrap();
     assert_eq!(decoded, &[true, false]);
@@ -329,7 +325,7 @@ fn vec_of_bool_from_non_empty_slice_twice() {
 #[test]
 fn map_empty() {
     let deserializer = Deserializer::from_slice(&[
-        14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 4, 255, 130, 0, 0
+        14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 4, 255, 130, 0, 0,
     ]);
     let decoded = <HashMap<String, bool>>::deserialize(deserializer).unwrap();
     assert_eq!(decoded.len(), 0);

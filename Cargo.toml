@@ -13,6 +13,9 @@ slice-deque = { git = "https://github.com/gnzlbg/slice_deque.git" }
 smallvec = "0.6.1"
 
 [dev-dependencies]
+duct = "0.10.0"
+failure = "0.1.1"
+tempfile = "3"
 serde_bytes = "0.10.4"
 
 [workspace]
