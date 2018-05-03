@@ -1,6 +1,6 @@
 use std::io::{self, Cursor, Write};
 
-use bytes::{BigEndian, Buf, BufMut};
+use bytes::{Buf, BufMut};
 
 #[derive(Debug)]
 pub(crate) enum Error {
@@ -45,7 +45,7 @@ impl<B: Buf> Message<B> {
         if self.buf.remaining() < len as usize {
             return Err(Error::IncompleteMessage);
         }
-        Ok(self.buf.get_uint::<BigEndian>(len as usize))
+        Ok(self.buf.get_uint_be(len as usize))
     }
 
     #[inline]
@@ -93,7 +93,7 @@ impl<B: BufMut> Message<B> {
         } else {
             let nbytes = 8 - (n.leading_zeros() / 8) as u8;
             self.buf.put_u8(!(nbytes - 1));
-            self.buf.put_uint::<BigEndian>(n, nbytes as usize);
+            self.buf.put_uint_be(n, nbytes as usize);
         }
         Ok(())
     }
