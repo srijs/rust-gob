@@ -9,27 +9,29 @@ use serde::{Deserialize, Deserializer};
 use serde::{Serialize, Serializer};
 use serde_schema::types::Type;
 
-use ::internal::utils::UniqVec;
+use ::internal::utils::UniqMap;
 use ::internal::gob::{Message, Writer};
 use ::internal::types::{Types, WireType, CommonType, StructType, FieldType, ArrayType, SliceType, MapType};
 use ::internal::ser::{SerializationCtx, FieldValueSerializer};
 
 pub struct Schema {
     pending_wire_types: Vec<(TypeId, Vec<u8>)>,
-    schema_types: UniqVec<Type<TypeId>>
+    next_type_id: TypeId,
+    schema_types: UniqMap<TypeId, Type<TypeId>>
 }
 
 impl Schema {
     pub fn new() -> Schema {
         Schema {
             pending_wire_types: Vec::new(),
-            schema_types: UniqVec::new()
+            next_type_id: TypeId(65),
+            schema_types: UniqMap::new()
         }
     }
 
     pub(crate) fn lookup(&self, id: TypeId) -> Option<&Type<TypeId>> {
         ::internal::types::lookup_builtin(id).or_else(||
-            self.schema_types.get(id.to_vec_idx()))
+            self.schema_types.get(&id))
     }
 
     pub(crate) fn write_pending<W: Write>(&mut self, mut out: Writer<W>) -> Result<(), Error> {
@@ -57,21 +59,23 @@ impl ::serde_schema::Schema for Schema {
     type Error = Error;
 
     fn register_type(&mut self, ty: Type<TypeId>) -> Result<TypeId, Error> {
-        let next_id = TypeId::from_vec_idx(self.schema_types.len());
+        let next_id = self.next_type_id;
         let mut other_wire_types = Vec::new();
         let wire_type = WireType::convert(next_id, &ty, &mut other_wire_types)?;
 
-        let (idx, new) = self.schema_types.push(ty, 1 + other_wire_types.len());
-        let id = TypeId::from_vec_idx(idx);
-
-        if new {
-            self.queue_wire_type(&wire_type);
-            for other_wire_type in other_wire_types {
-                self.queue_wire_type(&other_wire_type)?;
-            }
+        if let Some(id) = self.schema_types.insert(next_id, ty) {
+            return Ok(id);
         }
 
-        Ok(id)
+        self.queue_wire_type(&wire_type)?;
+        for other_wire_type in other_wire_types.iter() {
+            self.queue_wire_type(&other_wire_type)?;
+        }
+
+        self.next_type_id = TypeId(
+            (self.next_type_id.0 as usize + 1 + other_wire_types.len()) as i64);
+
+        Ok(next_id)
     }
 }
 
@@ -95,14 +99,6 @@ impl TypeId {
     pub(crate) const FIELD_TYPE: TypeId = TypeId(21);
     pub(crate) const FIELD_TYPE_SLICE: TypeId = TypeId(22);
     pub(crate) const MAP_TYPE: TypeId = TypeId(23);
-
-    fn from_vec_idx(idx: usize) -> TypeId {
-        TypeId((idx + 65) as i64)
-    }
-
-    fn to_vec_idx(&self) -> usize {
-        self.0 as usize - 65
-    }
 
     pub(crate) fn next(&self) -> TypeId {
         TypeId(self.0 + 1)
