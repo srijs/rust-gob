@@ -16,17 +16,13 @@ pub(crate) struct SerializeStructValue<'t> {
 
 impl<'t> SerializeStructValue<'t> {
     pub(crate) fn new(ctx: SerializationCtx<'t>, type_id: TypeId) -> Result<Self, Error> {
-        let struct_fields;
-        if let Some(&Type::Struct { ref fields, .. }) = ctx.schema.lookup(type_id) {
-            struct_fields = fields.to_vec();
+        let fields;
+        if let Some(&Type::Struct(ref struct_type)) = ctx.schema.lookup(type_id) {
+            fields = struct_type.fields().to_vec();
         } else {
             return Err(ser::Error::custom("schema mismatch, not a struct"));
         }
-        Ok(SerializeStructValue::from_parts(
-            ctx,
-            type_id,
-            struct_fields,
-        ))
+        Ok(SerializeStructValue::from_parts(ctx, type_id, fields))
     }
 
     pub(crate) fn from_parts(
@@ -67,7 +63,7 @@ impl<'t> ser::SerializeStruct for SerializeStructValue<'t> {
         let ok = {
             let de = FieldValueSerializer {
                 ctx,
-                type_id: self.fields[self.current_field_idx].id,
+                type_id: *self.fields[self.current_field_idx].field_type(),
             };
             value.serialize(de)?
         };

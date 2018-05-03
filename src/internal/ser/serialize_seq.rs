@@ -21,12 +21,9 @@ impl<'t> SerializeSeqValue<'t> {
         type_id: TypeId,
     ) -> Result<Self, Error> {
         let (len, elem) = match ctx.schema.lookup(type_id) {
-            Some(&Type::Seq {
-                len: seq_len,
-                element,
-            }) => {
-                if let Some(len) = seq_len.or(ser_len) {
-                    (len, element)
+            Some(&Type::Seq(ref seq_type)) => {
+                if let Some(len) = seq_type.len().or(ser_len) {
+                    (len, *seq_type.element_type())
                 } else {
                     return Err(ser::Error::custom(
                         "sequences without known length not supported",

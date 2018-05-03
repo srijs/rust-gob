@@ -28,10 +28,10 @@ impl<T: TypeId> StructBuilder<T> {
 
     #[inline]
     pub fn end(self) -> Type<T> {
-        Type::Struct {
+        Type::Struct(StructType {
             name: Cow::Borrowed(self.name),
             fields: Cow::Owned(self.fields),
-        }
+        })
     }
 }
 
@@ -55,9 +55,9 @@ impl<T: TypeId> TupleBuilder<T> {
 
     #[inline]
     pub fn end(self) -> Type<T> {
-        Type::Tuple {
+        Type::Tuple(TupleType {
             elements: Cow::Owned(self.elements),
-        }
+        })
     }
 }
 
@@ -83,10 +83,10 @@ impl<T: TypeId> TupleStructBuilder<T> {
 
     #[inline]
     pub fn end(self) -> Type<T> {
-        Type::TupleStruct {
+        Type::TupleStruct(TupleStructType {
             name: Cow::Borrowed(self.name),
             elements: Cow::Owned(self.elements),
-        }
+        })
     }
 }
 
@@ -108,10 +108,12 @@ impl<T: TypeId> StructVariantBuilder<T> {
 
     #[inline]
     pub fn end(mut self) -> EnumBuilder<T> {
-        self.enum_builder.variants.push(EnumVariant::Struct {
-            name: Cow::Borrowed(self.name),
-            fields: Cow::Owned(self.fields),
-        });
+        self.enum_builder
+            .variants
+            .push(EnumVariant::Struct(StructVariant {
+                name: Cow::Borrowed(self.name),
+                fields: Cow::Owned(self.fields),
+            }));
         self.enum_builder
     }
 }
@@ -131,10 +133,12 @@ impl<T: TypeId> TupleVariantBuilder<T> {
 
     #[inline]
     pub fn end(mut self) -> EnumBuilder<T> {
-        self.enum_builder.variants.push(EnumVariant::Tuple {
-            name: Cow::Borrowed(self.name),
-            elements: Cow::Owned(self.elements),
-        });
+        self.enum_builder
+            .variants
+            .push(EnumVariant::Tuple(TupleVariant {
+                name: Cow::Borrowed(self.name),
+                elements: Cow::Owned(self.elements),
+            }));
         self.enum_builder
     }
 }
@@ -155,18 +159,19 @@ impl<T: TypeId> EnumBuilder<T> {
 
     #[inline]
     pub fn unit_variant(mut self, name: &'static str) -> Self {
-        self.variants.push(EnumVariant::Unit {
+        self.variants.push(EnumVariant::Unit(UnitVariant {
             name: Cow::Borrowed(name),
-        });
+            _phan: PhantomData,
+        }));
         self
     }
 
     #[inline]
     pub fn newtype_variant(mut self, name: &'static str, id: T) -> Self {
-        self.variants.push(EnumVariant::Newtype {
+        self.variants.push(EnumVariant::Newtype(NewtypeVariant {
             name: Cow::Borrowed(name),
             value: id,
-        });
+        }));
         self
     }
 
@@ -190,10 +195,10 @@ impl<T: TypeId> EnumBuilder<T> {
 
     #[inline]
     pub fn end(self) -> Type<T> {
-        Type::Enum {
+        Type::Enum(EnumType {
             name: Cow::Borrowed(self.name),
             variants: Cow::Owned(self.variants),
-        }
+        })
     }
 }
 
@@ -209,27 +214,28 @@ impl<T: TypeId> TypeBuilder<T> {
 
     #[inline]
     pub fn option_type(self, value: T) -> Type<T> {
-        Type::Option { value }
+        Type::Option(OptionType { value })
     }
 
     #[inline]
     pub fn unit_struct_type(self, name: &'static str) -> Type<T> {
-        Type::UnitStruct {
+        Type::UnitStruct(UnitStructType {
+            _phan: PhantomData,
             name: Cow::Borrowed(name),
-        }
+        })
     }
 
     #[inline]
     pub fn newtype_struct_type(self, name: &'static str, value: T) -> Type<T> {
-        Type::NewtypeStruct {
+        Type::NewtypeStruct(NewtypeStructType {
             name: Cow::Borrowed(name),
             value,
-        }
+        })
     }
 
     #[inline]
     pub fn seq_type(self, len: Option<usize>, element: T) -> Type<T> {
-        Type::Seq { len, element }
+        Type::Seq(SeqType { len, element })
     }
 
     #[inline]
@@ -244,7 +250,7 @@ impl<T: TypeId> TypeBuilder<T> {
 
     #[inline]
     pub fn map_type(self, key: T, value: T) -> Type<T> {
-        Type::Map { key, value }
+        Type::Map(MapType { key, value })
     }
 
     #[inline]

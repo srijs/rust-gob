@@ -21,8 +21,8 @@ impl<'t> SerializeVariantValue<'t> {
         variant_idx: u32,
     ) -> Result<Self, Error> {
         let variant = match ctx.schema.lookup(type_id) {
-            Some(&Type::Enum { ref variants, .. }) => {
-                if let Some(variant) = variants.get(variant_idx as usize) {
+            Some(&Type::Enum(ref enum_type)) => {
+                if let Some(variant) = enum_type.variant(variant_idx) {
                     variant.clone()
                 } else {
                     return Err(ser::Error::custom("unknown enum variant type"));
@@ -59,33 +59,36 @@ impl<'t> SerializeVariantValue<'t> {
         T: Serialize,
     {
         self.write_header()?;
-        if let EnumVariant::Newtype { value: type_id, .. } = self.variant {
-            let ctx = ::std::mem::replace(&mut self.ctx, SerializationCtx::new());
-            let de = FieldValueSerializer { ctx, type_id };
-            let ok = value.serialize(de)?;
-            self.ctx = ok.ctx;
 
-            self.write_footer()?;
-
-            Ok(SerializationOk {
-                ctx: self.ctx,
-                is_empty: false,
-            })
+        let type_id = if let Some(newtype_variant) = self.variant.as_newtype_variant() {
+            *newtype_variant.inner_type()
         } else {
-            Err(ser::Error::custom(
+            return Err(ser::Error::custom(
                 "variant type mismatch, expected newtype variant",
-            ))
-        }
+            ));
+        };
+
+        let ctx = ::std::mem::replace(&mut self.ctx, SerializationCtx::new());
+        let de = FieldValueSerializer { ctx, type_id };
+        let ok = value.serialize(de)?;
+        self.ctx = ok.ctx;
+
+        self.write_footer()?;
+
+        Ok(SerializationOk {
+            ctx: self.ctx,
+            is_empty: false,
+        })
     }
 
     pub(crate) fn serialize_struct(mut self) -> Result<SerializeStructVariantValue<'t>, Error> {
         self.write_header()?;
-        if let EnumVariant::Struct { fields, .. } = self.variant {
+        if let Some(struct_variant) = self.variant.as_struct_variant() {
             Ok(SerializeStructVariantValue {
                 inner: SerializeStructValue::from_parts(
                     self.ctx,
                     self.type_id,
-                    fields.into_owned(),
+                    struct_variant.fields().to_vec(),
                 ),
             })
         } else {

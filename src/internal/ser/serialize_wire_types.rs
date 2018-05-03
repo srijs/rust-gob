@@ -33,17 +33,18 @@ impl<'a> SerializeWireTypes<'a> {
             type_id: TypeId::WIRE_TYPE,
         };
         let ok = match ty {
-            &Type::Struct {
-                ref name,
-                ref fields,
-            } => ser.serialize_newtype_variant(
+            &Type::Struct(ref struct_type) => ser.serialize_newtype_variant(
                 "WireType",
                 2,
                 "StructT",
-                &SerializeStructType { id, name, fields },
+                &SerializeStructType {
+                    id,
+                    name: struct_type.name(),
+                    fields: struct_type.fields(),
+                },
             )?,
-            &Type::Seq { len, element } => {
-                if let Some(len) = len {
+            &Type::Seq(ref seq_type) => {
+                if let Some(len) = seq_type.len() {
                     ser.serialize_newtype_variant(
                         "WireType",
                         0,
@@ -51,7 +52,7 @@ impl<'a> SerializeWireTypes<'a> {
                         &SerializeArrayType {
                             id,
                             len: len as i64,
-                            elem: element,
+                            elem: *seq_type.element_type(),
                         },
                     )?
                 } else {
@@ -59,28 +60,32 @@ impl<'a> SerializeWireTypes<'a> {
                         "WireType",
                         1,
                         "SliceT",
-                        &SerializeSliceType { id, elem: element },
+                        &SerializeSliceType {
+                            id,
+                            elem: *seq_type.element_type(),
+                        },
                     )?
                 }
             }
-            &Type::Map { key, value } => ser.serialize_newtype_variant(
+            &Type::Map(ref map_type) => ser.serialize_newtype_variant(
                 "WireType",
                 3,
                 "MapT",
                 &SerializeMapType {
                     id,
-                    key: key,
-                    elem: value,
+                    key: *map_type.key_type(),
+                    elem: *map_type.value_type(),
                 },
             )?,
-            &Type::Enum {
-                ref name,
-                ref variants,
-            } => ser.serialize_newtype_variant(
+            &Type::Enum(ref enum_type) => ser.serialize_newtype_variant(
                 "WireType",
                 2,
                 "StructT",
-                &SerializeEnumStructType { id, name, variants },
+                &SerializeEnumStructType {
+                    id,
+                    name: enum_type.name(),
+                    variants: enum_type.variants(),
+                },
             )?,
             _ => {
                 return Err(::serde::de::Error::custom("unsupported type"));
@@ -95,13 +100,9 @@ impl<'a> SerializeWireTypes<'a> {
         mut next_id: TypeId,
         ty: &Type<TypeId>,
     ) -> Result<(), Error> {
-        if let &Type::Enum { ref variants, .. } = ty {
-            for variant in variants.iter() {
-                if let &EnumVariant::Struct {
-                    ref name,
-                    ref fields,
-                } = variant
-                {
+        if let &Type::Enum(ref enum_type) = ty {
+            for variant in enum_type.variants() {
+                if let Some(struct_variant) = variant.as_struct_variant() {
                     let ctx = SerializationCtx::new();
                     let ok = {
                         let mut ser = FieldValueSerializer {
@@ -114,8 +115,8 @@ impl<'a> SerializeWireTypes<'a> {
                             "StructT",
                             &SerializeStructType {
                                 id: next_id,
-                                name,
-                                fields,
+                                name: struct_variant.name(),
+                                fields: struct_variant.fields(),
                             },
                         )?
                     };
@@ -166,11 +167,17 @@ impl<'a> Serialize for SerializeEnumStructFields<'a> {
         let mut next_id = self.id.next();
         for variant in self.variants {
             match variant {
-                &EnumVariant::Newtype { ref name, value } => {
-                    s.serialize_element(&SerializeStructField { name, id: value })?
+                &EnumVariant::Newtype(ref newtype_variant) => {
+                    s.serialize_element(&SerializeStructField {
+                        name: newtype_variant.name(),
+                        id: *newtype_variant.inner_type(),
+                    })?
                 }
-                &EnumVariant::Struct { ref name, .. } => {
-                    s.serialize_element(&SerializeStructField { name, id: next_id })?;
+                &EnumVariant::Struct(ref struct_variant) => {
+                    s.serialize_element(&SerializeStructField {
+                        name: struct_variant.name(),
+                        id: next_id,
+                    })?;
                     next_id = next_id.next();
                 }
                 _ => {
@@ -281,8 +288,8 @@ impl<'a> Serialize for SerializeStructFields<'a> {
         let mut s = serializer.serialize_seq(Some(self.fields.len()))?;
         for field in self.fields {
             s.serialize_element(&SerializeStructField {
-                name: &field.name,
-                id: field.id,
+                name: field.name(),
+                id: *field.field_type(),
             })?;
         }
         s.end()

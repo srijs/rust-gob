@@ -22,9 +22,9 @@ impl<'t> SerializeMapValue<'t> {
         type_id: TypeId,
     ) -> Result<Self, Error> {
         let (len, key, value) = match ctx.schema.lookup(type_id) {
-            Some(&Type::Map { key, value }) => {
+            Some(&Type::Map(ref map_type)) => {
                 if let Some(len) = ser_len {
-                    (len, key, value)
+                    (len, *map_type.key_type(), *map_type.value_type())
                 } else {
                     return Err(ser::Error::custom(
                         "maps without known length not supported",

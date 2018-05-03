@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use serde_schema::types::{EnumVariant, Type};
+use serde_schema::types::Type;
 
 use super::{ArrayType, CommonType, FieldType, MapType, SliceType, StructType, TypeId};
 
@@ -16,29 +16,16 @@ pub enum WireType {
     Map(MapType),
 }
 
-pub static WIRE_TYPE_DEF: Type<TypeId> = {
-    Type::Enum {
-        name: Cow::Borrowed("WireType"),
-        variants: Cow::Borrowed(&[
-            EnumVariant::Newtype {
-                name: Cow::Borrowed("ArrayT"),
-                value: TypeId::ARRAY_TYPE,
-            },
-            EnumVariant::Newtype {
-                name: Cow::Borrowed("SliceT"),
-                value: TypeId::SLICE_TYPE,
-            },
-            EnumVariant::Newtype {
-                name: Cow::Borrowed("StructT"),
-                value: TypeId::STRUCT_TYPE,
-            },
-            EnumVariant::Newtype {
-                name: Cow::Borrowed("MapT"),
-                value: TypeId::MAP_TYPE,
-            },
-        ]),
-    }
-};
+lazy_static! {
+    pub static ref WIRE_TYPE_DEF: Type<TypeId> = {
+        Type::build().enum_type("WireType", 4)
+            .newtype_variant("ArrayT", TypeId::ARRAY_TYPE)
+            .newtype_variant("SliceT", TypeId::SLICE_TYPE)
+            .newtype_variant("StructT", TypeId::STRUCT_TYPE)
+            .newtype_variant("MapT", TypeId::MAP_TYPE)
+            .end()
+    };
+}
 
 pub static WIRE_TYPE_DEF_2: WireType = {
     WireType::Struct(StructType {

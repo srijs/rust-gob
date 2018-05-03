@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 
-use serde_schema::types::{StructField, Type};
+use serde_schema::types::Type;
 
 use super::{CommonType, FieldType, StructType, TypeId, WireType};
 
@@ -11,21 +11,14 @@ pub struct SliceType {
     pub elem: TypeId,
 }
 
-pub static SLICE_TYPE_DEF: Type<TypeId> = {
-    Type::Struct {
-        name: Cow::Borrowed("SliceType"),
-        fields: Cow::Borrowed(&[
-            StructField {
-                name: Cow::Borrowed("common"),
-                id: TypeId::COMMON_TYPE,
-            },
-            StructField {
-                name: Cow::Borrowed("Elem"),
-                id: TypeId::INT,
-            },
-        ]),
-    }
-};
+lazy_static! {
+    pub static ref SLICE_TYPE_DEF: Type<TypeId> = {
+        Type::build().struct_type("SliceType", 2)
+            .field("common", TypeId::COMMON_TYPE)
+            .field("Elem", TypeId::INT)
+            .end()
+    };
+}
 
 pub static SLICE_TYPE_DEF_2: WireType = {
     WireType::Struct(StructType {

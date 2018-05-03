@@ -1,13 +1,14 @@
 use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet, BinaryHeap, HashMap, HashSet, LinkedList, VecDeque};
 use std::hash::{BuildHasher, Hash};
+use std::marker::PhantomData;
 
 use serde::ser::Serialize;
 
 #[cfg(feature = "bytes")]
 use serde_bytes::{ByteBuf, Bytes};
 
-use types::{StructField, Type, TypeId};
+use types::*;
 use {Schema, SchemaSerializer};
 
 pub trait SchemaSerialize: Serialize {
@@ -91,18 +92,19 @@ impl<T: SchemaSerialize> SchemaSerialize for Option<T> {
     #[inline]
     fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
         let id = T::schema_register(schema)?;
-        schema.register_type(Type::Option { value: id })
+        schema.register_type(Type::Option(OptionType { value: id }))
     }
 }
 
 // ## PhantomData
 
-impl<T> SchemaSerialize for ::std::marker::PhantomData<T> {
+impl<T> SchemaSerialize for PhantomData<T> {
     #[inline]
     fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-        schema.register_type(Type::UnitStruct {
+        schema.register_type(Type::UnitStruct(UnitStructType {
+            _phan: PhantomData,
             name: Cow::Borrowed("PhantomData"),
-        })
+        }))
     }
 }
 
@@ -115,7 +117,7 @@ macro_rules! array_impls {
                 #[inline]
                 fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
                     let id = T::schema_register(schema)?;
-                    schema.register_type(Type::Seq { len: Some($len), element: id })
+                    schema.register_type(Type::Seq(SeqType { len: Some($len), element: id }))
                 }
             }
         )+
@@ -135,10 +137,10 @@ impl<T: SchemaSerialize> SchemaSerialize for [T] {
     #[inline]
     fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
         let id = T::schema_register(schema)?;
-        schema.register_type(Type::Seq {
+        schema.register_type(Type::Seq(SeqType {
             len: None,
             element: id,
-        })
+        }))
     }
 }
 
@@ -156,7 +158,7 @@ macro_rules! seq_impl {
             #[inline]
             fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
                 let id = T::schema_register(schema)?;
-                schema.register_type(Type::Seq { len: None, element: id })
+                schema.register_type(Type::Seq(SeqType { len: None, element: id }))
             }
         }
     }
@@ -174,7 +176,7 @@ seq_impl!(VecDeque<T>);
 impl<Idx: SchemaSerialize> SchemaSerialize for ::std::ops::Range<Idx> {
     fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
         let id = Idx::schema_register(schema)?;
-        schema.register_type(Type::Struct {
+        schema.register_type(Type::Struct(StructType {
             name: Cow::Borrowed("Range"),
             fields: Cow::Owned(vec![
                 StructField {
@@ -186,7 +188,7 @@ impl<Idx: SchemaSerialize> SchemaSerialize for ::std::ops::Range<Idx> {
                     id,
                 },
             ]),
-        })
+        }))
     }
 }
 
@@ -215,7 +217,7 @@ macro_rules! tuple_impls {
                             $name::schema_register(schema)?,
                         )+
                     ];
-                    schema.register_type(Type::Tuple { elements: Cow::Owned(elements) })
+                    schema.register_type(Type::Tuple(TupleType { elements: Cow::Owned(elements) }))
                 }
             }
         )+
@@ -259,7 +261,7 @@ macro_rules! map_impl {
             fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
                 let k = K::schema_register(schema)?;
                 let v = V::schema_register(schema)?;
-                schema.register_type(Type::Map { key: k, value: v })
+                schema.register_type(Type::Map(MapType { key: k, value: v }))
             }
         }
     }

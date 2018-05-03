@@ -5,6 +5,7 @@ authors = ["Sam Rijs <srijs@airpost.net>"]
 
 [dependencies]
 bytes = "0.4.6"
+lazy_static = "1.0.0"
 serde = "1.0.39"
 serde_derive = "1.0.42"
 serde_schema = { path = "serde_schema", features = ["bytes"] }
