@@ -1,3 +1,5 @@
+#![deny(warnings)]
+
 extern crate serde;
 
 #[cfg(feature = "bytes")]

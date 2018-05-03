@@ -1,11 +1,6 @@
 use std::borrow::Cow;
-use std::fmt;
 
-use serde::{self, Deserialize, Deserializer, Serialize, Serializer};
-use serde::de::{Visitor, MapAccess};
-use serde::de::value::Error;
-use serde::ser::SerializeStruct;
-use serde_schema::types::{Type, StructField, EnumVariant};
+use serde_schema::types::{Type, EnumVariant};
 
 use super::{ArrayType, CommonType, SliceType, StructType, MapType, FieldType, TypeId};
 

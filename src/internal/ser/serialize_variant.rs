@@ -2,7 +2,7 @@ use serde::ser::{self, Serialize};
 use serde::de::value::Error;
 use serde_schema::types::{Type, EnumVariant};
 
-use ::internal::types::{TypeId, WireType};
+use ::internal::types::TypeId;
 
 use super::{SerializationOk, SerializationCtx, FieldValueSerializer};
 use super::SerializeStructValue;

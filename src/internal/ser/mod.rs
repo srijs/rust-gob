@@ -1,4 +1,4 @@
-use std::io::{Cursor, Write};
+use std::io::Write;
 
 use serde::Serialize;
 use serde::ser::{self, Impossible};
@@ -175,7 +175,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
         Err(ser::Error::custom("not implemented yet"))
@@ -185,15 +185,15 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_unit_struct(self, name: &'static str) -> Result<Self::Ok, Self::Error> {
+    fn serialize_unit_struct(self, _name: &'static str) -> Result<Self::Ok, Self::Error> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_unit_variant(self, name: &'static str, variant_index: u32, variant: &'static str) -> Result<Self::Ok, Self::Error> {
+    fn serialize_unit_variant(self, _name: &'static str, _variant_index: u32, _variant: &'static str) -> Result<Self::Ok, Self::Error> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_newtype_struct<T: ?Sized>(self, name: &'static str, value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_newtype_struct<T: ?Sized>(self, _name: &'static str, _value: &T) -> Result<Self::Ok, Self::Error>
         where T: Serialize
     {
         Err(ser::Error::custom("not implemented yet"))
@@ -214,11 +214,11 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         SerializeTupleValue::homogeneous(self.ctx, self.type_id)
     }
 
-    fn serialize_tuple_struct(self, name: &'static str, len: usize) -> Result<Self::SerializeTupleStruct, Self::Error> {
+    fn serialize_tuple_struct(self, _name: &'static str, _len: usize) -> Result<Self::SerializeTupleStruct, Self::Error> {
         Err(ser::Error::custom("not implemented yet"))
     }
 
-    fn serialize_tuple_variant(self, name: &'static str, variant_index: u32, variant: &'static str, len: usize) -> Result<Self::SerializeTupleVariant, Self::Error> {
+    fn serialize_tuple_variant(self, _name: &'static str, _variant_index: u32, _variant: &'static str, _len: usize) -> Result<Self::SerializeTupleVariant, Self::Error> {
         Err(ser::Error::custom("tuple variants not implemented yet"))
     }
 

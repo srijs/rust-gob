@@ -3,9 +3,8 @@ use std::io::Write;
 use serde::ser::{self, Serialize};
 use serde::de::value::Error;
 
-use ::internal::ser::{SerializationCtx, SerializeStructVariantValue};
-use ::internal::types::TypeId;
 use ::internal::gob::Writer;
+use ::internal::ser::SerializeStructVariantValue;
 
 pub struct SerializeStructVariant<'t, W> {
     inner: SerializeStructVariantValue<'t>,

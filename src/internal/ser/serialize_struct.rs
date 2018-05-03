@@ -2,7 +2,7 @@ use serde::ser::{self, Serialize};
 use serde::de::value::Error;
 use serde_schema::types::{Type, StructField};
 
-use ::internal::types::{TypeId, WireType, FieldType};
+use ::internal::types::TypeId;
 
 use super::{SerializationOk, SerializationCtx, FieldValueSerializer};
 
@@ -17,7 +17,7 @@ pub(crate) struct SerializeStructValue<'t> {
 impl<'t> SerializeStructValue<'t> {
     pub(crate) fn new(ctx: SerializationCtx<'t>, type_id: TypeId) -> Result<Self, Error> {
         let struct_fields;
-        if let Some(&Type::Struct { ref name, ref fields }) = ctx.schema.lookup(type_id) {
+        if let Some(&Type::Struct { ref fields, .. }) = ctx.schema.lookup(type_id) {
             struct_fields = fields.to_vec();
         } else {
             return Err(ser::Error::custom("schema mismatch, not a struct"));
@@ -42,7 +42,7 @@ impl<'t> ser::SerializeStruct for SerializeStructValue<'t> {
     type Ok = SerializationOk<'t>;
     type Error = Error;
 
-    fn serialize_field<T: ?Sized>(&mut self, key: &'static str, value: &T) -> Result<(), Self::Error>
+    fn serialize_field<T: ?Sized>(&mut self, _key: &'static str, value: &T) -> Result<(), Self::Error>
         where T: Serialize
     {
         let pre_pos = self.ctx.value.get_ref().len();
@@ -70,7 +70,7 @@ impl<'t> ser::SerializeStruct for SerializeStructValue<'t> {
         Ok(())
     }
 
-    fn skip_field(&mut self, key: &'static str) -> Result<(), Self::Error> {
+    fn skip_field(&mut self, _key: &'static str) -> Result<(), Self::Error> {
         self.current_field_idx += 1;
         Ok(())
     }

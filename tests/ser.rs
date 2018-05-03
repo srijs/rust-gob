@@ -10,7 +10,7 @@ use std::collections::BTreeMap;
 use gob::StreamSerializer;
 use serde_bytes::Bytes;
 use serde_schema::{Schema, SchemaSerialize};
-use serde_schema::types::{Type, TypeId, StructField, EnumVariant};
+use serde_schema::types::{Type, TypeId, StructField};
 
 #[test]
 fn bool_true() {
@@ -435,9 +435,9 @@ fn point_struct_skip_x() {
 fn enum_with_newtype_variants_and_external_tags() {
     #[derive(Serialize)]
     enum Enum {
-        #[serde(rename = "Var1")] V1(bool),
+        #[serde(rename = "Var1")] #[allow(unused)] V1(bool),
         #[serde(rename = "Var2")] V2(i64),
-        #[serde(rename = "Var3")] V3(String),
+        #[serde(rename = "Var3")] #[allow(unused)] V3(String),
     }
 
     impl SchemaSerialize for Enum {
@@ -467,9 +467,9 @@ fn enum_with_newtype_variants_and_external_tags() {
 fn enum_with_struct_variants_and_external_tags() {
     #[derive(Serialize)]
     enum Enum {
-        V1 { #[serde(rename="Foo")] foo: bool },
+        #[allow(unused)] V1 { #[serde(rename="Foo")] foo: bool },
         V2 { #[serde(rename="Bar")] bar: i64, #[serde(rename="Baz")] baz: u64 },
-        V3 { #[serde(rename="Quux")] quux: String }
+        #[allow(unused)] V3 { #[serde(rename="Quux")] quux: String }
     }
 
     impl SchemaSerialize for Enum {

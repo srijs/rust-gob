@@ -1,8 +1,6 @@
-use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::collections::hash_map::RandomState;
 use std::hash::{BuildHasher, Hash, Hasher};
-use std::marker::PhantomData;
 
 use smallvec::SmallVec;
 

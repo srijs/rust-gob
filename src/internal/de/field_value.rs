@@ -96,7 +96,7 @@ impl<'t, 'de> serde::Deserializer<'de> for FieldValueDeserializer<'t, 'de> {
     }
 
     #[inline]
-    fn deserialize_enum<V>(mut self, name: &'static str, variants: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_enum<V>(self, name: &'static str, variants: &'static [&'static str], visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor<'de>
     {
         if let Some(&WireType::Struct(ref struct_type)) = self.defs.lookup(self.type_id) {

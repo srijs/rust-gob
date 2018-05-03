@@ -1,7 +1,7 @@
 use serde::ser::{self, Serialize};
 use serde::de::value::Error;
 
-use ::internal::types::{TypeId, WireType};
+use ::internal::types::TypeId;
 
 use super::{SerializationOk, SerializationCtx, SerializeSeqValue};
 

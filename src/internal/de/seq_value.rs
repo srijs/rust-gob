@@ -4,11 +4,10 @@ use serde::de::{self, Deserializer, DeserializeSeed, Visitor};
 use serde::de::value::Error;
 
 use ::internal::gob::Message;
-use ::internal::types::{SliceType, Types, TypeId};
+use ::internal::types::{Types, TypeId};
 use super::FieldValueDeserializer;
 
 struct SeqAccess<'t, 'de> where 'de: 't {
-    len: Option<usize>,
     element: TypeId,
     defs: &'t Types,
     remaining_count: u64,
@@ -25,7 +24,7 @@ impl<'t, 'de> SeqAccess<'t, 'de> {
             }
         }
 
-        Ok(SeqAccess { len, element, defs, remaining_count, msg })
+        Ok(SeqAccess { element, defs, remaining_count, msg })
     }
 }
 

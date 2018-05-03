@@ -1,7 +1,5 @@
 //! Schema management
 
-use std::borrow::Cow;
-use std::collections::HashMap;
 use std::io::Write;
 
 use serde::de::value::Error;
@@ -10,9 +8,8 @@ use serde::{Serialize, Serializer};
 use serde_schema::types::Type;
 
 use ::internal::utils::UniqMap;
-use ::internal::gob::{Message, Writer};
-use ::internal::types::{Types, WireType, CommonType, StructType, FieldType, ArrayType, SliceType, MapType};
-use ::internal::ser::{SerializationCtx, FieldValueSerializer, SerializeWireTypes};
+use ::internal::gob::Writer;
+use ::internal::ser::SerializeWireTypes;
 
 pub struct Schema {
     pending_wire_types: Vec<(TypeId, Vec<u8>)>,
@@ -74,7 +71,6 @@ impl TypeId {
     pub const BYTES: TypeId = TypeId(5);
     pub const STRING: TypeId = TypeId(6);
     pub const COMPLEX: TypeId = TypeId(7);
-    pub(crate) const INTERFACE: TypeId = TypeId(8);
     pub(crate) const WIRE_TYPE: TypeId = TypeId(16);
     pub(crate) const ARRAY_TYPE: TypeId = TypeId(17);
     pub(crate) const COMMON_TYPE: TypeId = TypeId(18);

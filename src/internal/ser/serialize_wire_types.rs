@@ -25,7 +25,7 @@ impl<'a> SerializeWireTypes<'a> {
 
     fn serialize_main_type(&mut self, id: TypeId, ty: &Type<TypeId>) -> Result<(), Error> {
         let ctx = SerializationCtx::new();
-        let mut ser = FieldValueSerializer { ctx, type_id: TypeId::WIRE_TYPE };
+        let ser = FieldValueSerializer { ctx, type_id: TypeId::WIRE_TYPE };
         let ok = match ty {
             &Type::Struct { ref name, ref fields } => {
                 ser.serialize_newtype_variant("WireType", 2, "StructT",
