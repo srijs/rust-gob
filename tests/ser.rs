@@ -474,6 +474,40 @@ fn point_struct_skip_x() {
     );
 }
 
+#[derive(Serialize)]
+struct BoolStruct {
+    #[serde(rename = "V")]
+    v: bool,
+}
+
+impl SchemaSerialize for BoolStruct {
+    fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
+        schema.register_type(
+            Type::build()
+                .struct_type("BoolStruct", 2)
+                .field("V", TypeId::BOOL)
+                .end(),
+        )
+    }
+}
+
+#[test]
+fn bool_struct() {
+    let mut buffer = Vec::new();
+    {
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(&BoolStruct { v: true }).unwrap();
+    }
+    assert_eq!(
+        buffer,
+        [
+            0x1e, 0xff, 0x81, 0x03, 0x01, 0x01, 0x0a, 0x42, 0x6f, 0x6f, 0x6c, 0x53, 0x74, 0x72,
+            0x75, 0x63, 0x74, 0x01, 0xff, 0x82, 0x00, 0x01, 0x01, 0x01, 0x01, 0x56, 0x01, 0x02,
+            0x00, 0x00, 0x00, 0x05, 0xff, 0x82, 0x01, 0x01, 0x00,
+        ].as_ref()
+    );
+}
+
 #[test]
 fn enum_with_newtype_variants_and_external_tags() {
     #[derive(Serialize)]
