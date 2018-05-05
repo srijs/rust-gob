@@ -1,6 +1,6 @@
 use std::io::{Read, Result as IoResult};
 
-use bytes::{Buf, BufMut};
+use bytes::Buf;
 use slice_deque::SliceDeque;
 
 pub struct RingBuf {
@@ -59,39 +59,13 @@ impl Buf for RingBuf {
 
     #[inline]
     fn advance(&mut self, cnt: usize) {
+        if cnt > self.deque.len() {
+            panic!("cannot advance beyond the end of the RingBuf");
+        }
+        // SAFETY: We've checked that `cnt` is within the current deque length,
+        // and by virtue of it being an `usize`, we also know that it is not negative.
+        // Therefore moving the deque head by `cnt` will not expose any uninitialized
+        // memory.
         unsafe { self.deque.move_head(cnt as isize) }
-    }
-}
-
-impl BufMut for RingBuf {
-    #[inline]
-    fn remaining_mut(&self) -> usize {
-        usize::max_value() - self.deque.len()
-    }
-
-    #[inline]
-    unsafe fn bytes_mut(&mut self) -> &mut [u8] {
-        let len = self.deque.len();
-        if self.deque.capacity() == len {
-            self.deque.reserve(64); // Grow the deque
-        }
-
-        let cap = self.deque.capacity();
-
-        let ptr = self.deque.as_mut_ptr();
-        &mut ::std::slice::from_raw_parts_mut(ptr, cap)[len..]
-    }
-
-    #[inline]
-    unsafe fn advance_mut(&mut self, cnt: usize) {
-        let len = self.deque.len();
-        let remaining = self.deque.capacity() - len;
-        if cnt > remaining {
-            // Reserve additional capacity, and ensure that the total length
-            // will not overflow usize.
-            self.deque.reserve(cnt);
-        }
-
-        self.deque.move_tail_unchecked(cnt as isize);
     }
 }
