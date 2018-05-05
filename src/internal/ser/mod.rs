@@ -92,7 +92,7 @@ impl<'t> ser::Serializer for FieldValueSerializer<'t> {
         self.ctx.value.write_bool(v)?;
         Ok(SerializationOk {
             ctx: self.ctx,
-            is_empty: v == true,
+            is_empty: v == false,
         })
     }
 
