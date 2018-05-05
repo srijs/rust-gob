@@ -388,6 +388,23 @@ fn vec_of_bool_to_empty_slice_twice() {
 }
 
 #[test]
+fn vec_of_bool_from_non_empty_slice_twice() {
+    let mut buffer = Vec::new();
+    {
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(&vec![true, false]).unwrap();
+        stream.serialize(&vec![false, true]).unwrap();
+    }
+    assert_eq!(
+        buffer,
+        &[
+            12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 6, 255, 130, 0, 2, 1, 0, 6, 255, 130,
+            0, 2, 0, 1,
+        ]
+    );
+}
+
+#[test]
 fn map_empty() {
     let mut buffer = Vec::new();
     {

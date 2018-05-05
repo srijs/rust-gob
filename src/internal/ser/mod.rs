@@ -4,7 +4,7 @@ use serde::de::value::Error;
 use serde::ser::{self, Impossible};
 use serde::Serialize;
 
-use internal::gob::{Message, Writer};
+use internal::gob::{Message, Stream};
 use internal::types::TypeId;
 use internal::utils::Bow;
 
@@ -48,7 +48,7 @@ impl<'t> SerializationCtx<'t> {
     pub(crate) fn flush<W: Write>(
         &mut self,
         type_id: TypeId,
-        mut writer: Writer<W>,
+        mut writer: Stream<W>,
     ) -> Result<(), Error> {
         self.schema.write_pending(writer.borrow_mut())?;
         writer.write_section(type_id.0, self.value.get_ref())?;

@@ -3,13 +3,13 @@ use std::io::Write;
 use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 
-use internal::gob::Writer;
+use internal::gob::Stream;
 use internal::ser::{SerializationCtx, SerializeMapValue};
 use internal::types::TypeId;
 
 pub struct SerializeMap<'t, W> {
     inner: SerializeMapValue<'t>,
-    out: Writer<W>,
+    out: Stream<W>,
 }
 
 impl<'t, W: Write> SerializeMap<'t, W> {
@@ -17,7 +17,7 @@ impl<'t, W: Write> SerializeMap<'t, W> {
         len: Option<usize>,
         type_id: TypeId,
         ctx: SerializationCtx<'t>,
-        out: Writer<W>,
+        out: Stream<W>,
     ) -> Result<Self, Error> {
         Ok(SerializeMap {
             inner: SerializeMapValue::new(ctx, len, type_id)?,

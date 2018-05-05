@@ -7,7 +7,7 @@ use serde::{Deserialize, Deserializer};
 use serde::{Serialize, Serializer};
 use serde_schema::types::Type;
 
-use internal::gob::Writer;
+use internal::gob::Stream;
 use internal::ser::SerializeWireTypes;
 use internal::utils::UniqMap;
 
@@ -30,7 +30,7 @@ impl Schema {
         ::internal::types::lookup_builtin(id).or_else(|| self.schema_types.get(&id))
     }
 
-    pub(crate) fn write_pending<W: Write>(&mut self, mut out: Writer<W>) -> Result<(), Error> {
+    pub(crate) fn write_pending<W: Write>(&mut self, mut out: Stream<W>) -> Result<(), Error> {
         for (type_id, wire_type_buffer) in self.pending_wire_types.drain(..) {
             out.write_section(-type_id.0, &wire_type_buffer)?;
         }

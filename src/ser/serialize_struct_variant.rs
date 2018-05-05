@@ -3,18 +3,18 @@ use std::io::Write;
 use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 
-use internal::gob::Writer;
+use internal::gob::Stream;
 use internal::ser::SerializeStructVariantValue;
 
 pub struct SerializeStructVariant<'t, W> {
     inner: SerializeStructVariantValue<'t>,
-    out: Writer<W>,
+    out: Stream<W>,
 }
 
 impl<'t, W: Write> SerializeStructVariant<'t, W> {
     pub(crate) fn new(
         inner: SerializeStructVariantValue<'t>,
-        out: Writer<W>,
+        out: Stream<W>,
     ) -> Result<Self, Error> {
         Ok(SerializeStructVariant { inner, out })
     }

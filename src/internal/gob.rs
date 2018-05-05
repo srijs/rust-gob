@@ -1,6 +1,8 @@
-use std::io::{self, Cursor, Write};
+use std::io::{self, Cursor, Read, Write};
 
 use bytes::{Buf, BufMut};
+
+use internal::utils::RingBuf;
 
 #[derive(Debug)]
 pub(crate) enum Error {
@@ -131,33 +133,33 @@ impl<B: BufMut> Message<B> {
     }
 }
 
-pub(crate) struct Writer<W> {
-    inner: W,
+pub(crate) struct Stream<Io> {
+    inner: Io,
 }
 
-impl<W> Writer<W> {
-    pub fn new(inner: W) -> Writer<W> {
-        Writer { inner }
+impl<Io> Stream<Io> {
+    pub fn new(inner: Io) -> Stream<Io> {
+        Stream { inner }
     }
 
-    pub fn borrow_mut(&mut self) -> Writer<&mut W> {
-        Writer::new(self.get_mut())
+    pub fn borrow_mut(&mut self) -> Stream<&mut Io> {
+        Stream::new(self.get_mut())
     }
 
-    pub fn get_ref(&self) -> &W {
+    pub fn get_ref(&self) -> &Io {
         &self.inner
     }
 
-    pub fn get_mut(&mut self) -> &mut W {
+    pub fn get_mut(&mut self) -> &mut Io {
         &mut self.inner
     }
 
-    pub fn into_inner(self) -> W {
+    pub fn into_inner(self) -> Io {
         self.inner
     }
 }
 
-impl<W: Write> Writer<W> {
+impl<Io: Write> Stream<Io> {
     fn write_buf(&mut self, buf: &[u8]) -> Result<(), Error> {
         self.inner.write_all(buf).map_err(|err| Error::Io(err))
     }
@@ -172,5 +174,64 @@ impl<W: Write> Writer<W> {
         self.write_buf(&len_msg.get_ref().get_ref()[..len_pos])?;
         self.write_buf(&type_id_msg.get_ref().get_ref()[..type_id_pos])?;
         self.write_buf(buf)
+    }
+}
+
+impl<Io: Read> Stream<Io> {
+    fn read_section_len(&mut self, buf: &mut RingBuf) -> Result<Option<u64>, Error> {
+        println!("read section len");
+        if buf.len() == 0 {
+            let n = buf.read_from(&mut self.inner).map_err(Error::Io)?;
+            if n == 0 {
+                return Ok(None);
+            }
+        }
+        loop {
+            let (result, position) = {
+                let mut cursor = Cursor::new(buf.bytes());
+                let result = {
+                    let mut msg = Message::new(&mut cursor);
+                    msg.read_uint()
+                };
+                (result, cursor.position() as usize)
+            };
+            match result {
+                Ok(len) => {
+                    buf.advance(position);
+                    return Ok(Some(len));
+                }
+                Err(Error::IncompleteMessage) => {
+                    let n = buf.read_from(&mut self.inner).map_err(Error::Io)?;
+                    if n > 0 {
+                        continue;
+                    } else {
+                        return Err(Error::Io(io::ErrorKind::UnexpectedEof.into()));
+                    }
+                }
+                Err(err) => {
+                    return Err(err);
+                }
+            }
+        }
+    }
+
+    pub fn read_section(&mut self, buf: &mut RingBuf) -> Result<Option<(i64, usize)>, Error> {
+        let msg_len = match self.read_section_len(buf)? {
+            Some(len) => len as usize,
+            None => return Ok(None),
+        };
+        println!("msg len {}", msg_len);
+        let buf_len = buf.len();
+        if buf_len < msg_len {
+            buf.read_from_exact(&mut self.inner, msg_len - buf_len)
+                .map_err(Error::Io)?;
+        }
+        let (type_id, position) = {
+            let mut cursor = Cursor::new(buf.bytes());
+            let type_id = Message::new(&mut cursor).read_int()?;
+            (type_id, cursor.position() as usize)
+        };
+        buf.advance(position);
+        Ok(Some((type_id, msg_len - position)))
     }
 }

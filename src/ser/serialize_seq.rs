@@ -3,13 +3,13 @@ use std::io::Write;
 use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 
-use internal::gob::Writer;
+use internal::gob::Stream;
 use internal::ser::{SerializationCtx, SerializeSeqValue};
 use internal::types::TypeId;
 
 pub struct SerializeSeq<'t, W> {
     inner: SerializeSeqValue<'t>,
-    out: Writer<W>,
+    out: Stream<W>,
 }
 
 impl<'t, W: Write> SerializeSeq<'t, W> {
@@ -17,7 +17,7 @@ impl<'t, W: Write> SerializeSeq<'t, W> {
         len: Option<usize>,
         type_id: TypeId,
         ctx: SerializationCtx<'t>,
-        out: Writer<W>,
+        out: Stream<W>,
     ) -> Result<Self, Error> {
         Ok(SerializeSeq {
             inner: SerializeSeqValue::new(ctx, len, type_id)?,

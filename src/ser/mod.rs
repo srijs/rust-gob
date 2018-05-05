@@ -7,7 +7,7 @@ use serde::ser::{self, Impossible};
 use serde::Serialize;
 use serde_schema::SchemaSerialize;
 
-use internal::gob::Writer;
+use internal::gob::Stream;
 use internal::ser::{FieldValueSerializer, SerializationCtx, SerializeVariantValue};
 use internal::utils::Bow;
 
@@ -28,7 +28,7 @@ pub use self::serialize_struct_variant::SerializeStructVariant;
 pub struct Serializer<'t, W> {
     ctx: SerializationCtx<'t>,
     type_id: TypeId,
-    out: Writer<W>,
+    out: Stream<W>,
 }
 
 impl<'t, W> Serializer<'t, W> {
@@ -36,17 +36,17 @@ impl<'t, W> Serializer<'t, W> {
     /// with the provided output sink.
     pub fn new(id: TypeId, out: W) -> Serializer<'t, W> {
         let ctx = SerializationCtx::new();
-        Serializer::with_context(id, ctx, Writer::new(out))
+        Serializer::with_context(id, ctx, Stream::new(out))
     }
 
     /// Create a new serializer for a value of the specified type,
     /// with the provided schema and output sink.
     pub fn with_schema(id: TypeId, schema: &'t mut Schema, out: W) -> Serializer<'t, W> {
         let ctx = SerializationCtx::with_schema(Bow::Borrowed(schema));
-        Serializer::with_context(id, ctx, Writer::new(out))
+        Serializer::with_context(id, ctx, Stream::new(out))
     }
 
-    fn with_context(id: TypeId, ctx: SerializationCtx<'t>, out: Writer<W>) -> Self {
+    fn with_context(id: TypeId, ctx: SerializationCtx<'t>, out: Stream<W>) -> Self {
         Serializer {
             ctx,
             type_id: id,
@@ -58,7 +58,7 @@ impl<'t, W> Serializer<'t, W> {
 /// Serializes a stream of values.
 pub struct StreamSerializer<W> {
     schema: Schema,
-    out: Writer<W>,
+    out: Stream<W>,
 }
 
 impl<W> StreamSerializer<W> {
@@ -67,7 +67,7 @@ impl<W> StreamSerializer<W> {
         let schema = Schema::new();
         StreamSerializer {
             schema,
-            out: Writer::new(out),
+            out: Stream::new(out),
         }
     }
 

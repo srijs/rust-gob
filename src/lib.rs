@@ -8,6 +8,7 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_schema;
+extern crate slice_deque;
 extern crate smallvec;
 
 mod internal;
@@ -16,5 +17,5 @@ pub mod de;
 mod schema;
 pub mod ser;
 
-pub use de::Deserializer;
+pub use de::{Deserializer, StreamDeserializer};
 pub use ser::StreamSerializer;

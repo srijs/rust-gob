@@ -3,20 +3,20 @@ use std::io::Write;
 use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 
-use internal::gob::Writer;
+use internal::gob::Stream;
 use internal::ser::{SerializationCtx, SerializeStructValue};
 use internal::types::TypeId;
 
 pub struct SerializeStruct<'t, W> {
     inner: SerializeStructValue<'t>,
-    out: Writer<W>,
+    out: Stream<W>,
 }
 
 impl<'t, W: Write> SerializeStruct<'t, W> {
     pub(crate) fn new(
         type_id: TypeId,
         ctx: SerializationCtx<'t>,
-        out: Writer<W>,
+        out: Stream<W>,
     ) -> Result<Self, Error> {
         Ok(SerializeStruct {
             inner: SerializeStructValue::new(ctx, type_id)?,
