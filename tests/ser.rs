@@ -320,9 +320,7 @@ fn vec_of_bool_to_empty_slice() {
     }
     assert_eq!(
         buffer,
-        &[
-            12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0
-        ]
+        include_bytes!("reference/output/slice_of_bool_empty.gob")
     );
 }
 
@@ -335,9 +333,7 @@ fn vec_of_bool_to_non_empty_slice() {
     }
     assert_eq!(
         buffer,
-        &[
-            12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 6, 255, 130, 0, 2, 1, 0
-        ]
+        include_bytes!("reference/output/slice_of_bool_non_empty.gob")
     );
 }
 
@@ -350,9 +346,7 @@ fn vec_of_bool_to_empty_array() {
     }
     assert_eq!(
         buffer,
-        &[
-            12, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0
-        ]
+        include_bytes!("reference/output/array_of_bool_empty.gob")
     );
 }
 
@@ -365,9 +359,7 @@ fn vec_of_bool_to_non_empty_array() {
     }
     assert_eq!(
         buffer,
-        &[
-            14, 255, 129, 1, 1, 2, 255, 130, 0, 1, 2, 1, 4, 0, 0, 6, 255, 130, 0, 2, 1, 0
-        ]
+        include_bytes!("reference/output/array_of_bool_non_empty.gob")
     );
 }
 
@@ -381,9 +373,7 @@ fn vec_of_bool_to_empty_slice_twice() {
     }
     assert_eq!(
         buffer,
-        &[
-            12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 4, 255, 130, 0, 0, 4, 255, 130, 0, 0
-        ]
+        include_bytes!("reference/output/slice_of_bool_empty_twice.gob")
     );
 }
 
@@ -397,10 +387,7 @@ fn vec_of_bool_from_non_empty_slice_twice() {
     }
     assert_eq!(
         buffer,
-        &[
-            12, 255, 129, 2, 1, 2, 255, 130, 0, 1, 2, 0, 0, 6, 255, 130, 0, 2, 1, 0, 6, 255, 130,
-            0, 2, 0, 1,
-        ]
+        include_bytes!("reference/output/slice_of_bool_non_empty_twice.gob")
     );
 }
 
@@ -413,9 +400,7 @@ fn map_empty() {
     }
     assert_eq!(
         buffer,
-        &[
-            14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 4, 255, 130, 0, 0
-        ]
+        include_bytes!("reference/output/map_empty.gob").as_ref()
     );
 }
 
@@ -431,10 +416,7 @@ fn map_non_empty() {
     }
     assert_eq!(
         buffer,
-        &[
-            14, 255, 129, 4, 1, 2, 255, 130, 0, 1, 12, 1, 2, 0, 0, 14, 255, 130, 0, 2, 3, 98, 97,
-            114, 0, 3, 102, 111, 111, 1,
-        ]
+        include_bytes!("reference/output/map_non_empty.gob").as_ref()
     );
 }
 
@@ -467,11 +449,7 @@ fn point_struct() {
     }
     assert_eq!(
         buffer,
-        [
-            0x1f, 0xff, 0x81, 0x03, 0x01, 0x01, 0x05, 0x50, 0x6f, 0x69, 0x6e, 0x74, 0x01, 0xff,
-            0x82, 0x00, 0x01, 0x02, 0x01, 0x01, 0x58, 0x01, 0x04, 0x00, 0x01, 0x01, 0x59, 0x01,
-            0x04, 0x00, 0x00, 0x00, 0x07, 0xff, 0x82, 0x01, 0x2c, 0x01, 0x42, 0x00,
-        ].as_ref()
+        include_bytes!("reference/output/point_struct.gob").as_ref()
     );
 }
 
@@ -484,10 +462,7 @@ fn point_struct_skip_x() {
     }
     assert_eq!(
         buffer,
-        [
-            31, 255, 129, 3, 1, 1, 5, 80, 111, 105, 110, 116, 1, 255, 130, 0, 1, 2, 1, 1, 88, 1, 4,
-            0, 1, 1, 89, 1, 4, 0, 0, 0, 5, 255, 130, 2, 84, 0,
-        ].as_ref()
+        include_bytes!("reference/output/point_struct_skip_x.gob").as_ref()
     );
 }
 
@@ -501,7 +476,7 @@ impl SchemaSerialize for BoolStruct {
     fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
         schema.register_type(
             Type::build()
-                .struct_type("BoolStruct", 2)
+                .struct_type("BoolStruct", 1)
                 .field("V", TypeId::BOOL)
                 .end(),
         )
@@ -517,11 +492,7 @@ fn bool_struct() {
     }
     assert_eq!(
         buffer,
-        [
-            0x1e, 0xff, 0x81, 0x03, 0x01, 0x01, 0x0a, 0x42, 0x6f, 0x6f, 0x6c, 0x53, 0x74, 0x72,
-            0x75, 0x63, 0x74, 0x01, 0xff, 0x82, 0x00, 0x01, 0x01, 0x01, 0x01, 0x56, 0x01, 0x02,
-            0x00, 0x00, 0x00, 0x05, 0xff, 0x82, 0x01, 0x01, 0x00,
-        ].as_ref()
+        include_bytes!("reference/output/bool_struct.gob").as_ref()
     );
 }
 
@@ -559,11 +530,7 @@ fn enum_with_newtype_variants_and_external_tags() {
     }
     assert_eq!(
         buffer,
-        [
-            45, 255, 129, 3, 1, 1, 4, 69, 110, 117, 109, 1, 255, 130, 0, 1, 3, 1, 4, 86, 97, 114,
-            49, 1, 2, 0, 1, 4, 86, 97, 114, 50, 1, 4, 0, 1, 4, 86, 97, 114, 51, 1, 12, 0, 0, 0, 5,
-            255, 130, 2, 84, 0,
-        ].as_ref()
+        include_bytes!("reference/output/enum_with_newtype_variants.gob").as_ref()
     );
 }
 
@@ -616,13 +583,6 @@ fn enum_with_struct_variants_and_external_tags() {
     }
     assert_eq!(
         buffer,
-        [
-            42, 255, 129, 3, 1, 1, 4, 69, 110, 117, 109, 1, 255, 130, 0, 1, 3, 1, 2, 86, 49, 1,
-            255, 132, 0, 1, 2, 86, 50, 1, 255, 134, 0, 1, 2, 86, 51, 1, 255, 136, 0, 0, 0, 24, 255,
-            131, 3, 1, 1, 2, 86, 49, 1, 255, 132, 0, 1, 1, 1, 3, 70, 111, 111, 1, 2, 0, 0, 0, 32,
-            255, 133, 3, 1, 1, 2, 86, 50, 1, 255, 134, 0, 1, 2, 1, 3, 66, 97, 114, 1, 4, 0, 1, 3,
-            66, 97, 122, 1, 6, 0, 0, 0, 25, 255, 135, 3, 1, 1, 2, 86, 51, 1, 255, 136, 0, 1, 1, 1,
-            4, 81, 117, 117, 120, 1, 12, 0, 0, 0, 11, 255, 130, 2, 1, 84, 1, 254, 4, 210, 0, 0,
-        ].as_ref()
+        include_bytes!("reference/output/enum_with_struct_variants.gob").as_ref()
     );
 }
