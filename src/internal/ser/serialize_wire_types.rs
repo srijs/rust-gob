@@ -3,7 +3,7 @@ use serde::ser::{SerializeSeq, SerializeStruct};
 use serde::{Serialize, Serializer};
 use serde_schema::types::{EnumVariant, StructField, Type};
 
-use schema::TypeId;
+use schema::{Schema, TypeId};
 
 use super::{FieldValueSerializer, SerializationCtx};
 
@@ -27,7 +27,7 @@ impl<'a> SerializeWireTypes<'a> {
     }
 
     fn serialize_main_type(&mut self, id: TypeId, ty: &Type<TypeId>) -> Result<(), Error> {
-        let ctx = SerializationCtx::new();
+        let ctx = SerializationCtx::with_schema(Schema::new());
         let ser = FieldValueSerializer {
             ctx,
             type_id: TypeId::WIRE_TYPE,
@@ -103,7 +103,7 @@ impl<'a> SerializeWireTypes<'a> {
         if let &Type::Enum(ref enum_type) = ty {
             for variant in enum_type.variants() {
                 if let Some(struct_variant) = variant.as_struct_variant() {
-                    let ctx = SerializationCtx::new();
+                    let ctx = SerializationCtx::with_schema(Schema::new());
                     let ok = {
                         let mut ser = FieldValueSerializer {
                             ctx,

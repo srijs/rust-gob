@@ -3,19 +3,21 @@ use std::io::Write;
 use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 
+use internal::utils::Bow;
 use internal::gob::Stream;
 use internal::ser::{SerializationCtx, SerializeTupleValue};
 use internal::types::TypeId;
+use schema::Schema;
 
 pub struct SerializeTuple<'t, W> {
-    inner: SerializeTupleValue<'t>,
+    inner: SerializeTupleValue<Bow<'t, Schema>>,
     out: Stream<W>,
 }
 
 impl<'t, W: Write> SerializeTuple<'t, W> {
     pub(crate) fn homogeneous(
         type_id: TypeId,
-        ctx: SerializationCtx<'t>,
+        ctx: SerializationCtx<Bow<'t, Schema>>,
         out: Stream<W>,
     ) -> Result<Self, Error> {
         Ok(SerializeTuple {

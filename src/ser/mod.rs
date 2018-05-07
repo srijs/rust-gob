@@ -26,7 +26,7 @@ pub use self::serialize_struct_variant::SerializeStructVariant;
 
 /// Serializes a single value.
 pub struct Serializer<'t, W> {
-    ctx: SerializationCtx<'t>,
+    ctx: SerializationCtx<Bow<'t, Schema>>,
     type_id: TypeId,
     out: Stream<W>,
 }
@@ -35,7 +35,7 @@ impl<'t, W> Serializer<'t, W> {
     /// Create a new serializer for a value of the specified type,
     /// with the provided output sink.
     pub fn new(id: TypeId, out: W) -> Serializer<'t, W> {
-        let ctx = SerializationCtx::new();
+        let ctx = SerializationCtx::with_schema(Bow::Owned(Schema::new()));
         Serializer::with_context(id, ctx, Stream::new(out))
     }
 
@@ -46,7 +46,7 @@ impl<'t, W> Serializer<'t, W> {
         Serializer::with_context(id, ctx, Stream::new(out))
     }
 
-    fn with_context(id: TypeId, ctx: SerializationCtx<'t>, out: Stream<W>) -> Self {
+    fn with_context(id: TypeId, ctx: SerializationCtx<Bow<'t, Schema>>, out: Stream<W>) -> Self {
         Serializer {
             ctx,
             type_id: id,

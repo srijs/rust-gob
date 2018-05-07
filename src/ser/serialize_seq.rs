@@ -3,12 +3,14 @@ use std::io::Write;
 use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 
+use internal::utils::Bow;
 use internal::gob::Stream;
 use internal::ser::{SerializationCtx, SerializeSeqValue};
 use internal::types::TypeId;
+use schema::Schema;
 
 pub struct SerializeSeq<'t, W> {
-    inner: SerializeSeqValue<'t>,
+    inner: SerializeSeqValue<Bow<'t, Schema>>,
     out: Stream<W>,
 }
 
@@ -16,7 +18,7 @@ impl<'t, W: Write> SerializeSeq<'t, W> {
     pub(crate) fn new(
         len: Option<usize>,
         type_id: TypeId,
-        ctx: SerializationCtx<'t>,
+        ctx: SerializationCtx<Bow<'t, Schema>>,
         out: Stream<W>,
     ) -> Result<Self, Error> {
         Ok(SerializeSeq {

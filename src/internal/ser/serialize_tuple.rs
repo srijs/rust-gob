@@ -1,16 +1,19 @@
+use std::borrow::Borrow;
+
 use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 
 use internal::types::TypeId;
+use schema::Schema;
 
 use super::{SerializationCtx, SerializationOk, SerializeSeqValue};
 
-pub(crate) enum SerializeTupleValue<'t> {
-    Homogeneous(SerializeSeqValue<'t>),
+pub(crate) enum SerializeTupleValue<S> {
+    Homogeneous(SerializeSeqValue<S>),
 }
 
-impl<'t> SerializeTupleValue<'t> {
-    pub(crate) fn homogeneous(ctx: SerializationCtx<'t>, type_id: TypeId) -> Result<Self, Error> {
+impl<S: Borrow<Schema>> SerializeTupleValue<S> {
+    pub(crate) fn homogeneous(ctx: SerializationCtx<S>, type_id: TypeId) -> Result<Self, Error> {
         let inner = SerializeSeqValue::new(ctx, None, type_id)?;
         Ok(SerializeTupleValue::Homogeneous(inner))
     }
@@ -22,8 +25,8 @@ impl<'t> SerializeTupleValue<'t> {
     }
 }
 
-impl<'t> ser::SerializeTuple for SerializeTupleValue<'t> {
-    type Ok = SerializationOk<'t>;
+impl<S: Borrow<Schema>> ser::SerializeTuple for SerializeTupleValue<S> {
+    type Ok = SerializationOk<S>;
     type Error = Error;
 
     fn serialize_element<T: ?Sized>(&mut self, value: &T) -> Result<(), Self::Error>

@@ -1,26 +1,29 @@
+use std::borrow::Borrow;
+
 use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 use serde_schema::types::{EnumVariant, Type};
 
 use internal::types::TypeId;
+use schema::Schema;
 
 use super::SerializeStructValue;
 use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
 
-pub(crate) struct SerializeVariantValue<'t> {
-    ctx: SerializationCtx<'t>,
+pub(crate) struct SerializeVariantValue<S> {
+    ctx: SerializationCtx<S>,
     type_id: TypeId,
     variant: EnumVariant<TypeId>,
     variant_idx: u32,
 }
 
-impl<'t> SerializeVariantValue<'t> {
+impl<S: Borrow<Schema>> SerializeVariantValue<S> {
     pub(crate) fn new(
-        ctx: SerializationCtx<'t>,
+        ctx: SerializationCtx<S>,
         type_id: TypeId,
         variant_idx: u32,
     ) -> Result<Self, Error> {
-        let variant = match ctx.schema.lookup(type_id) {
+        let variant = match ctx.schema.borrow().lookup(type_id) {
             Some(&Type::Enum(ref enum_type)) => {
                 if let Some(variant) = enum_type.variant(variant_idx) {
                     variant.clone()
@@ -41,24 +44,24 @@ impl<'t> SerializeVariantValue<'t> {
         })
     }
 
-    fn write_header(&mut self) -> Result<(), Error> {
-        self.ctx.value.write_uint(self.variant_idx as u64 + 1)?;
+    fn write_header(ctx: &mut SerializationCtx<S>, idx: u32) -> Result<(), Error> {
+        ctx.value.write_uint(idx as u64 + 1)?;
         Ok(())
     }
 
-    fn write_footer(&mut self) -> Result<(), Error> {
-        self.ctx.value.write_uint(0)?;
+    fn write_footer(ctx: &mut SerializationCtx<S>) -> Result<(), Error> {
+        ctx.value.write_uint(0)?;
         Ok(())
     }
 
     pub(crate) fn serialize_newtype<T: ?Sized>(
         mut self,
         value: &T,
-    ) -> Result<SerializationOk<'t>, Error>
+    ) -> Result<SerializationOk<S>, Error>
     where
         T: Serialize,
     {
-        self.write_header()?;
+        Self::write_header(&mut self.ctx, self.variant_idx)?;
 
         let type_id = if let Some(newtype_variant) = self.variant.as_newtype_variant() {
             *newtype_variant.inner_type()
@@ -68,21 +71,22 @@ impl<'t> SerializeVariantValue<'t> {
             ));
         };
 
-        let ctx = ::std::mem::replace(&mut self.ctx, SerializationCtx::new());
-        let de = FieldValueSerializer { ctx, type_id };
-        let ok = value.serialize(de)?;
-        self.ctx = ok.ctx;
+        let de = FieldValueSerializer {
+            ctx: self.ctx,
+            type_id,
+        };
+        let mut ok = value.serialize(de)?;
 
-        self.write_footer()?;
+        Self::write_footer(&mut ok.ctx)?;
 
         Ok(SerializationOk {
-            ctx: self.ctx,
+            ctx: ok.ctx,
             is_empty: false,
         })
     }
 
-    pub(crate) fn serialize_struct(mut self) -> Result<SerializeStructVariantValue<'t>, Error> {
-        self.write_header()?;
+    pub(crate) fn serialize_struct(mut self) -> Result<SerializeStructVariantValue<S>, Error> {
+        Self::write_header(&mut self.ctx, self.variant_idx)?;
         if let Some(struct_variant) = self.variant.as_struct_variant() {
             Ok(SerializeStructVariantValue {
                 inner: SerializeStructValue::from_parts(
@@ -99,18 +103,18 @@ impl<'t> SerializeVariantValue<'t> {
     }
 }
 
-pub(crate) struct SerializeStructVariantValue<'t> {
-    inner: SerializeStructValue<'t>,
+pub(crate) struct SerializeStructVariantValue<S> {
+    inner: SerializeStructValue<S>,
 }
 
-impl<'t> SerializeStructVariantValue<'t> {
+impl<S: Borrow<Schema>> SerializeStructVariantValue<S> {
     pub(crate) fn type_id(&self) -> TypeId {
         self.inner.type_id()
     }
 }
 
-impl<'t> ser::SerializeStructVariant for SerializeStructVariantValue<'t> {
-    type Ok = SerializationOk<'t>;
+impl<S: Borrow<Schema>> ser::SerializeStructVariant for SerializeStructVariantValue<S> {
+    type Ok = SerializationOk<S>;
     type Error = Error;
 
     fn serialize_field<T: ?Sized>(

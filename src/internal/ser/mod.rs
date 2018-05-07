@@ -1,3 +1,4 @@
+use std::borrow::{Borrow, BorrowMut};
 use std::io::Write;
 
 use serde::de::value::Error;
@@ -6,7 +7,6 @@ use serde::Serialize;
 
 use internal::gob::{Message, Stream};
 use internal::types::TypeId;
-use internal::utils::Bow;
 
 use schema::Schema;
 
@@ -23,22 +23,18 @@ pub(crate) use self::serialize_variant::{SerializeStructVariantValue, SerializeV
 mod serialize_wire_types;
 pub(crate) use self::serialize_wire_types::SerializeWireTypes;
 
-pub(crate) struct SerializationOk<'t> {
-    pub ctx: SerializationCtx<'t>,
+pub(crate) struct SerializationOk<S> {
+    pub ctx: SerializationCtx<S>,
     pub is_empty: bool,
 }
 
-pub(crate) struct SerializationCtx<'t> {
-    pub schema: Bow<'t, Schema>,
+pub(crate) struct SerializationCtx<S> {
+    pub schema: S,
     pub value: Message<Vec<u8>>,
 }
 
-impl<'t> SerializationCtx<'t> {
-    pub(crate) fn new() -> Self {
-        SerializationCtx::with_schema(Bow::Owned(Schema::new()))
-    }
-
-    pub(crate) fn with_schema(schema: Bow<'t, Schema>) -> Self {
+impl<S> SerializationCtx<S> {
+    pub(crate) fn with_schema(schema: S) -> Self {
         SerializationCtx {
             schema,
             value: Message::new(Vec::new()),
@@ -49,19 +45,22 @@ impl<'t> SerializationCtx<'t> {
         &mut self,
         type_id: TypeId,
         mut writer: Stream<W>,
-    ) -> Result<(), Error> {
-        self.schema.write_pending(writer.borrow_mut())?;
+    ) -> Result<(), Error>
+    where
+        S: BorrowMut<Schema>,
+    {
+        self.schema.borrow_mut().write_pending(writer.borrow_mut())?;
         writer.write_section(type_id.0, self.value.get_ref())?;
         Ok(())
     }
 }
 
-pub(crate) struct FieldValueSerializer<'t> {
-    pub ctx: SerializationCtx<'t>,
+pub(crate) struct FieldValueSerializer<S> {
+    pub ctx: SerializationCtx<S>,
     pub type_id: TypeId,
 }
 
-impl<'t> FieldValueSerializer<'t> {
+impl<S> FieldValueSerializer<S> {
     fn check_type(&self, got: TypeId) -> Result<(), Error> {
         if self.type_id != got {
             Err(ser::Error::custom(format!(
@@ -74,17 +73,20 @@ impl<'t> FieldValueSerializer<'t> {
     }
 }
 
-impl<'t> ser::Serializer for FieldValueSerializer<'t> {
-    type Ok = SerializationOk<'t>;
+impl<S> ser::Serializer for FieldValueSerializer<S>
+where
+    S: Borrow<Schema>,
+{
+    type Ok = SerializationOk<S>;
     type Error = Error;
 
-    type SerializeSeq = SerializeSeqValue<'t>;
-    type SerializeTuple = SerializeTupleValue<'t>;
+    type SerializeSeq = SerializeSeqValue<S>;
+    type SerializeTuple = SerializeTupleValue<S>;
     type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
-    type SerializeMap = SerializeMapValue<'t>;
-    type SerializeStruct = SerializeStructValue<'t>;
-    type SerializeStructVariant = SerializeStructVariantValue<'t>;
+    type SerializeMap = SerializeMapValue<S>;
+    type SerializeStruct = SerializeStructValue<S>;
+    type SerializeStructVariant = SerializeStructVariantValue<S>;
 
     #[inline]
     fn serialize_bool(mut self, v: bool) -> Result<Self::Ok, Self::Error> {
