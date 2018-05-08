@@ -586,3 +586,41 @@ fn enum_with_struct_variants_and_external_tags() {
         include_bytes!("reference/output/enum_with_struct_variants.gob").as_ref()
     );
 }
+
+#[test]
+fn option_none_to_empty_values() {
+    let mut buffer = Vec::new();
+    {
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize::<Option<bool>>(&None).unwrap();
+        stream.serialize::<Option<u64>>(&None).unwrap();
+        stream.serialize::<Option<i64>>(&None).unwrap();
+        stream.serialize::<Option<f64>>(&None).unwrap();
+        stream.serialize::<Option<String>>(&None).unwrap();
+        stream.serialize::<Option<Bytes>>(&None).unwrap();
+        stream.serialize::<Option<Vec<bool>>>(&None).unwrap();
+    }
+    assert_eq!(
+        buffer,
+        include_bytes!("reference/output/empty_values.gob").as_ref()
+    );
+}
+
+#[test]
+fn option_some_to_non_empty_values() {
+    let mut buffer = Vec::new();
+    {
+        let mut stream = StreamSerializer::new(&mut buffer);
+        stream.serialize(&Some(true)).unwrap();
+        stream.serialize(&Some(42u64)).unwrap();
+        stream.serialize(&Some(42i64)).unwrap();
+        stream.serialize(&Some(42f64)).unwrap();
+        stream.serialize(&Some("foo")).unwrap();
+        stream.serialize(&Some(Bytes::new(&[0x1, 0x2]))).unwrap();
+        stream.serialize(&Some(vec![true, false])).unwrap();
+    }
+    assert_eq!(
+        buffer,
+        include_bytes!("reference/output/non_empty_values.gob").as_ref()
+    );
+}

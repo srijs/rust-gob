@@ -20,6 +20,8 @@ mod serialize_map;
 pub(crate) use self::serialize_map::SerializeMapValue;
 mod serialize_variant;
 pub(crate) use self::serialize_variant::{SerializeStructVariantValue, SerializeVariantValue};
+mod serialize_empty;
+pub(crate) use self::serialize_empty::SerializeEmptyValue;
 mod serialize_wire_types;
 pub(crate) use self::serialize_wire_types::SerializeWireTypes;
 
@@ -176,14 +178,31 @@ where
     }
 
     fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+        let value = {
+            let ser = FieldValueSerializer {
+                ctx: SerializationCtx {
+                    schema: self.ctx.schema.borrow(),
+                    value: self.ctx.value,
+                },
+                type_id: self.type_id,
+            };
+            let value = SerializeEmptyValue::new(self.ctx.schema.borrow(), self.type_id);
+            value.serialize(ser)?.ctx.value
+        };
+        Ok(SerializationOk {
+            ctx: SerializationCtx {
+                schema: self.ctx.schema,
+                value,
+            },
+            is_empty: true,
+        })
     }
 
-    fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
     where
         T: Serialize,
     {
-        Err(ser::Error::custom("not implemented yet"))
+        value.serialize(self)
     }
 
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {

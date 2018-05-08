@@ -45,6 +45,10 @@ impl ::serde_schema::Schema for Schema {
     fn register_type(&mut self, ty: Type<TypeId>) -> Result<TypeId, Error> {
         let next_id = self.next_type_id;
 
+        if let Type::Option(ref option_type) = ty {
+            return Ok(*option_type.inner_type());
+        }
+
         if let Some(id) = self.schema_types.insert(next_id, ty) {
             return Ok(id);
         }

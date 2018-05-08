@@ -226,15 +226,23 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
         ok.ctx.flush(self.type_id, self.out)
     }
 
-    fn serialize_none(self) -> Result<Self::Ok, Self::Error> {
-        Err(ser::Error::custom("not implemented yet"))
+    fn serialize_none(mut self) -> Result<Self::Ok, Self::Error> {
+        self.ctx.value.write_uint(0)?;
+        let mut ok = {
+            let ser = FieldValueSerializer {
+                ctx: self.ctx,
+                type_id: self.type_id,
+            };
+            ser.serialize_none()?
+        };
+        ok.ctx.flush(self.type_id, self.out)
     }
 
-    fn serialize_some<T: ?Sized>(self, _value: &T) -> Result<Self::Ok, Self::Error>
+    fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
     where
         T: Serialize,
     {
-        Err(ser::Error::custom("not implemented yet"))
+        value.serialize(self)
     }
 
     fn serialize_unit(self) -> Result<Self::Ok, Self::Error> {
