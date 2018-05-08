@@ -179,7 +179,6 @@ impl<Io: Write> Stream<Io> {
 
 impl<Io: Read> Stream<Io> {
     fn read_section_len(&mut self, buf: &mut RingBuf) -> Result<Option<u64>, Error> {
-        println!("read section len");
         if buf.len() == 0 {
             let n = buf.read_from(&mut self.inner).map_err(Error::Io)?;
             if n == 0 {
@@ -220,7 +219,6 @@ impl<Io: Read> Stream<Io> {
             Some(len) => len as usize,
             None => return Ok(None),
         };
-        println!("msg len {}", msg_len);
         let buf_len = buf.len();
         if buf_len < msg_len {
             buf.read_from_exact(&mut self.inner, msg_len - buf_len)
