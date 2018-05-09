@@ -9,7 +9,7 @@ lazy_static = "1.0.0"
 serde = "1.0.39"
 serde_derive = "1.0.42"
 serde_schema = { path = "serde_schema", features = ["bytes"] }
-slice-deque = { git = "https://github.com/gnzlbg/slice_deque.git" }
+slice-deque = "0.1.8"
 smallvec = "0.6.1"
 
 [dev-dependencies]
