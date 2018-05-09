@@ -18,7 +18,8 @@ pub enum WireType {
 
 lazy_static! {
     pub static ref WIRE_TYPE_DEF: Type<TypeId> = {
-        Type::build().enum_type("WireType", 4)
+        Type::build()
+            .enum_type("WireType", 4)
             .newtype_variant("ArrayT", TypeId::ARRAY_TYPE)
             .newtype_variant("SliceT", TypeId::SLICE_TYPE)
             .newtype_variant("StructT", TypeId::STRUCT_TYPE)

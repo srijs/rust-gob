@@ -13,7 +13,8 @@ pub struct SliceType {
 
 lazy_static! {
     pub static ref SLICE_TYPE_DEF: Type<TypeId> = {
-        Type::build().struct_type("SliceType", 2)
+        Type::build()
+            .struct_type("SliceType", 2)
             .field("common", TypeId::COMMON_TYPE)
             .field("Elem", TypeId::INT)
             .end()

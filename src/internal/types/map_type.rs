@@ -15,7 +15,8 @@ pub struct MapType {
 
 lazy_static! {
     pub static ref MAP_TYPE_DEF: Type<TypeId> = {
-        Type::build().struct_type("MapType", 3)
+        Type::build()
+            .struct_type("MapType", 3)
             .field("common", TypeId::COMMON_TYPE)
             .field("Key", TypeId::INT)
             .field("Elem", TypeId::INT)

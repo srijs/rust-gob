@@ -14,7 +14,8 @@ pub struct StructType {
 
 lazy_static! {
     pub static ref STRUCT_TYPE_DEF: Type<TypeId> = {
-        Type::build().struct_type("StructType", 2)
+        Type::build()
+            .struct_type("StructType", 2)
             .field("common", TypeId::COMMON_TYPE)
             .field("Fields", TypeId::FIELD_TYPE_SLICE)
             .end()
@@ -52,10 +53,11 @@ pub struct FieldType {
 
 lazy_static! {
     pub static ref FIELD_TYPE_DEF: Type<TypeId> = {
-        Type::build().struct_type("FieldType", 2)
-        .field("Name", TypeId::STRING)
-        .field("Id", TypeId::INT)
-        .end()
+        Type::build()
+            .struct_type("FieldType", 2)
+            .field("Name", TypeId::STRING)
+            .field("Id", TypeId::INT)
+            .end()
     };
 }
 
@@ -79,9 +81,8 @@ pub static FIELD_TYPE_DEF_2: WireType = {
 };
 
 lazy_static! {
-    pub static ref FIELD_TYPE_SLICE_DEF: Type<TypeId> = {
-        Type::build().seq_type(None, TypeId::FIELD_TYPE)
-    };
+    pub static ref FIELD_TYPE_SLICE_DEF: Type<TypeId> =
+        { Type::build().seq_type(None, TypeId::FIELD_TYPE) };
 }
 
 pub static FIELD_TYPE_SLICE_DEF_2: WireType = {

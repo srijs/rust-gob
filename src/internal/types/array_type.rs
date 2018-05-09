@@ -15,7 +15,8 @@ pub struct ArrayType {
 
 lazy_static! {
     pub static ref ARRAY_TYPE_DEF: Type<TypeId> = {
-        Type::build().struct_type("ArrayType", 3)
+        Type::build()
+            .struct_type("ArrayType", 3)
             .field("common", TypeId::COMMON_TYPE)
             .field("Elem", TypeId::INT)
             .field("Len", TypeId::INT)

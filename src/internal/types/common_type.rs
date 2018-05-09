@@ -14,7 +14,8 @@ pub struct CommonType {
 
 lazy_static! {
     pub static ref COMMON_TYPE_DEF: Type<TypeId> = {
-        Type::build().struct_type("CommonType", 2)
+        Type::build()
+            .struct_type("CommonType", 2)
             .field("Name", TypeId::STRING)
             .field("Id", TypeId::INT)
             .end()

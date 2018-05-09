@@ -3,10 +3,10 @@ use std::io::Write;
 use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 
-use internal::utils::Bow;
 use internal::gob::Stream;
 use internal::ser::{SerializationCtx, SerializeStructValue};
 use internal::types::TypeId;
+use internal::utils::Bow;
 use schema::Schema;
 
 pub struct SerializeStruct<'t, W> {
