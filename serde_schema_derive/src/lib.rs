@@ -184,11 +184,3 @@ fn derive_struct_named_fields(
         ::serde_schema::Schema::register_type(schema, #expanded_build_type)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
