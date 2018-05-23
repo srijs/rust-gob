@@ -8,16 +8,10 @@ bytes = "0.4.6"
 lazy_static = "1.0.0"
 serde = "1.0.39"
 serde_derive = "1.0.42"
-serde_schema = { path = "serde_schema", features = ["bytes"] }
-serde_schema_derive = { path = "serde_schema_derive" }
+serde_schema = { git = "https://github.com/srijs/rust-serde-schema", features = ["bytes"] }
+serde_schema_derive = { git = "https://github.com/srijs/rust-serde-schema" }
 slice-deque = "0.1.8"
 smallvec = "0.6.1"
 
 [dev-dependencies]
 serde_bytes = "0.10.4"
-
-[workspace]
-members = [
-  "serde_schema",
-  "serde_schema_derive"
-]
