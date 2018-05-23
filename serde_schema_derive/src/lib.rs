@@ -117,7 +117,7 @@ fn derive_struct_impl(
     match data.fields {
         syn::Fields::Named(fields) => derive_struct_named_fields(ident, fields, attr_container, cx),
         syn::Fields::Unnamed(_fields) => panic!("tuple structs are not supported yet"),
-        syn::Fields::Unit => panic!("unit structs are not supported yet"),
+        syn::Fields::Unit => derive_struct_unit(attr_container),
     }
 }
 
@@ -155,6 +155,14 @@ fn derive_field(
     let field_name = attr_field.name().serialize_name();
     quote!{
         .field(#field_name, #type_id_ident)
+    }
+}
+
+fn derive_struct_unit(attr_container: attr::Container) -> quote::Tokens {
+    let name = attr_container.name().serialize_name();
+    quote!{
+        ::serde_schema::Schema::register_type(schema,
+            serde_schema::types::Type::build().unit_struct_type(#name))
     }
 }
 

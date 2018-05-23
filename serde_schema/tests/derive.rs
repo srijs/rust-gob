@@ -50,6 +50,19 @@ impl Schema for MockSchema {
 }
 
 #[test]
+fn unit_struct() {
+    #[derive(Serialize, SchemaSerialize)]
+    struct Unit;
+
+    let mut schema = MockSchema(Vec::new());
+    let type_id = Unit::schema_register(&mut schema).unwrap();
+
+    assert_eq!(type_id, MockTypeId::Custom(0));
+    assert_eq!(schema.0.len(), 1);
+    assert_eq!(schema.0[0], Type::build().unit_struct_type("Unit"));
+}
+
+#[test]
 fn struct_point_with_field_rename() {
     #[derive(Serialize, SchemaSerialize)]
     struct Point {
