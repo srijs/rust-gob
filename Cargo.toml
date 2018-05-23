@@ -9,6 +9,7 @@ lazy_static = "1.0.0"
 serde = "1.0.39"
 serde_derive = "1.0.42"
 serde_schema = { path = "serde_schema", features = ["bytes"] }
+serde_schema_derive = { path = "serde_schema_derive" }
 slice-deque = "0.1.8"
 smallvec = "0.6.1"
 
@@ -16,4 +17,7 @@ smallvec = "0.6.1"
 serde_bytes = "0.10.4"
 
 [workspace]
-members = ["serde_schema"]
+members = [
+  "serde_schema",
+  "serde_schema_derive"
+]

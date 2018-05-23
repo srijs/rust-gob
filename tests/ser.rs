@@ -4,6 +4,8 @@ extern crate serde_bytes;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_schema;
+#[macro_use]
+extern crate serde_schema_derive;
 
 use std::collections::BTreeMap;
 
@@ -420,24 +422,12 @@ fn map_non_empty() {
     );
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, SchemaSerialize)]
 struct Point {
     #[serde(rename = "X")]
     x: i64,
     #[serde(rename = "Y")]
     y: i64,
-}
-
-impl SchemaSerialize for Point {
-    fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-        schema.register_type(
-            Type::build()
-                .struct_type("Point", 2)
-                .field("X", TypeId::I64)
-                .field("Y", TypeId::I64)
-                .end(),
-        )
-    }
 }
 
 #[test]
@@ -466,21 +456,10 @@ fn point_struct_skip_x() {
     );
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, SchemaSerialize)]
 struct BoolStruct {
     #[serde(rename = "V")]
     v: bool,
-}
-
-impl SchemaSerialize for BoolStruct {
-    fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-        schema.register_type(
-            Type::build()
-                .struct_type("BoolStruct", 1)
-                .field("V", TypeId::BOOL)
-                .end(),
-        )
-    }
 }
 
 #[test]
