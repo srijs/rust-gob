@@ -11,8 +11,6 @@ use std::collections::BTreeMap;
 
 use gob::StreamSerializer;
 use serde_bytes::Bytes;
-use serde_schema::types::{Type, TypeId};
-use serde_schema::{Schema, SchemaSerialize};
 
 #[test]
 fn bool_true() {
@@ -477,7 +475,7 @@ fn bool_struct() {
 
 #[test]
 fn enum_with_newtype_variants_and_external_tags() {
-    #[derive(Serialize)]
+    #[derive(Serialize, SchemaSerialize)]
     enum Enum {
         #[serde(rename = "Var1")]
         #[allow(unused)]
@@ -487,19 +485,6 @@ fn enum_with_newtype_variants_and_external_tags() {
         #[serde(rename = "Var3")]
         #[allow(unused)]
         V3(String),
-    }
-
-    impl SchemaSerialize for Enum {
-        fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-            schema.register_type(
-                Type::build()
-                    .enum_type("Enum", 3)
-                    .newtype_variant("Var1", TypeId::BOOL)
-                    .newtype_variant("Var2", TypeId::I64)
-                    .newtype_variant("Var3", TypeId::STR)
-                    .end(),
-            )
-        }
     }
 
     let mut buffer = Vec::new();
@@ -515,7 +500,7 @@ fn enum_with_newtype_variants_and_external_tags() {
 
 #[test]
 fn enum_with_struct_variants_and_external_tags() {
-    #[derive(Serialize)]
+    #[derive(Serialize, SchemaSerialize)]
     enum Enum {
         #[allow(unused)]
         V1 {
@@ -533,26 +518,6 @@ fn enum_with_struct_variants_and_external_tags() {
             #[serde(rename = "Quux")]
             quux: String,
         },
-    }
-
-    impl SchemaSerialize for Enum {
-        fn schema_register<S: Schema>(schema: &mut S) -> Result<S::TypeId, S::Error> {
-            schema.register_type(
-                Type::build()
-                    .enum_type("Enum", 3)
-                    .struct_variant("V1", 1)
-                    .field("Foo", TypeId::BOOL)
-                    .end()
-                    .struct_variant("V2", 2)
-                    .field("Bar", TypeId::I64)
-                    .field("Baz", TypeId::U64)
-                    .end()
-                    .struct_variant("V3", 1)
-                    .field("Quux", TypeId::STR)
-                    .end()
-                    .end(),
-            )
-        }
     }
 
     let mut buffer = Vec::new();

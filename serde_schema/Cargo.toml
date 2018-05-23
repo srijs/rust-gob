@@ -8,5 +8,9 @@ workspace = ".."
 serde = "1.0.39"
 serde_bytes = { version = "0.10.4", optional = true }
 
+[dev-dependencies]
+serde_derive = "1.0.42"
+serde_schema_derive = { path = "../serde_schema_derive" }
+
 [features]
 bytes = ["serde_bytes"]
