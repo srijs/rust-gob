@@ -1,8 +1,8 @@
 use std::io::Cursor;
 
 use bytes::Buf;
-use serde::de::value::Error;
 use serde::de::Visitor;
+use serde::de::value::Error;
 use serde::{self, Deserialize};
 
 use internal::gob::Message;

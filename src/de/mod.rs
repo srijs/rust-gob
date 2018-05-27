@@ -3,8 +3,8 @@
 use std::io::{Cursor, Read};
 
 use bytes::Buf;
-use serde::de::value::Error;
 use serde::de::Visitor;
+use serde::de::value::Error;
 use serde::{self, Deserialize};
 
 use internal::gob::{Message, Stream};
