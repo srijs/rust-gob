@@ -373,6 +373,17 @@ fn point_struct() {
 }
 
 #[test]
+fn unit_struct() {
+    #[derive(Deserialize)]
+    struct EmptyStruct {};
+
+    let deserializer =
+        Deserializer::from_slice(include_bytes!("reference/output/empty_struct.gob"));
+
+    EmptyStruct::deserialize(deserializer).unwrap();
+}
+
+#[test]
 fn enum_with_newtype_variants_and_external_tags() {
     #[derive(Deserialize, Debug, PartialEq, Eq)]
     enum Enum {

@@ -8,7 +8,7 @@ use super::{CommonType, SliceType, TypeId, WireType};
 pub struct StructType {
     pub common: CommonType,
     // the fields of the struct
-    #[serde(rename = "Fields")]
+    #[serde(rename = "Fields", default)]
     pub fields: Cow<'static, [FieldType]>,
 }
 
