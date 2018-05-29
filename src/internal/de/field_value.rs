@@ -1,8 +1,8 @@
 use std::io::Cursor;
 
 use bytes::Buf;
-use serde::de::Visitor;
 use serde::de::value::Error;
+use serde::de::{IgnoredAny, Visitor};
 use serde::{self, Deserialize};
 
 use internal::gob::Message;
@@ -133,9 +133,18 @@ impl<'t, 'de> serde::Deserializer<'de> for FieldValueDeserializer<'t, 'de> {
         }
     }
 
+    #[inline]
+    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        self.deserialize_ignored_any(IgnoredAny)?;
+        visitor.visit_unit()
+    }
+
     forward_to_deserialize_any! {
         bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 str string bytes
-        byte_buf option unit unit_struct newtype_struct seq tuple
+        byte_buf option unit_struct newtype_struct seq tuple
         tuple_struct map struct identifier ignored_any
     }
 }

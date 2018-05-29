@@ -430,3 +430,16 @@ fn enum_with_struct_variants_and_external_tags() {
     let decoded = Enum::deserialize(deserializer).unwrap();
     assert_eq!(decoded, Enum::V2 { bar: 42, baz: 1234 });
 }
+
+#[test]
+fn unit_from_any() {
+    let buffer = include_bytes!("reference/output/non_empty_values.gob");
+
+    let cursor = Cursor::new(buffer.as_ref());
+    let mut stream = StreamDeserializer::new(cursor);
+
+    for _ in 0..7 {
+        let () = stream.deserialize::<()>().unwrap().unwrap();
+    }
+    assert!(stream.deserialize::<()>().unwrap().is_none());
+}
