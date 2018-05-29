@@ -5,7 +5,7 @@ use std::io::Write;
 use serde::Serialize;
 use serde::de::value::Error;
 use serde::ser::{self, Impossible};
-use serde_schema::SchemaSerialize;
+use serde_schema::{SchemaSerialize, SchemaSerializer};
 
 use internal::gob::Stream;
 use internal::ser::{FieldValueSerializer, SerializationCtx, SerializeVariantValue};
@@ -78,6 +78,14 @@ impl<W> StreamSerializer<W> {
         W: Write,
     {
         value.schema_serialize(self)
+    }
+
+    pub fn serialize_with_type_id<T>(&mut self, type_id: TypeId, value: &T) -> Result<(), Error>
+    where
+        T: Serialize,
+        W: Write,
+    {
+        value.serialize(self.serializer(type_id)?)
     }
 
     pub fn get_ref(&self) -> &W {
