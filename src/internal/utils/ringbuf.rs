@@ -54,7 +54,7 @@ impl RingBuf {
 
     pub fn read_from_exact<R: Read>(&mut self, r: &mut R, cnt: usize) -> IoResult<()> {
         let pre_len = self.deque.len();
-        self.deque.resize(pre_len + cnt, 0);
+        self.resize(pre_len + cnt);
         match r.read_exact(&mut self.deque.as_mut_slice()[pre_len..]) {
             Ok(()) => Ok(()),
             Err(err) => {
