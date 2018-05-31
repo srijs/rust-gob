@@ -18,9 +18,28 @@ impl RingBuf {
         self.deque.len()
     }
 
+    // FIXME: workaround for https://github.com/gnzlbg/slice_deque/pull/38
+    fn resize(&mut self, new_len: usize) {
+        let len = self.deque.len();
+        let cap = self.deque.capacity();
+
+        if new_len > cap {
+            self.deque.reserve(new_len);
+        }
+
+        if new_len > len {
+            while self.deque.len() < new_len {
+                self.deque.push_back(0);
+            }
+        } else {
+            self.deque.truncate(new_len);
+        }
+        debug_assert!(self.deque.len() == new_len);
+    }
+
     pub fn read_from<R: Read>(&mut self, r: &mut R) -> IoResult<usize> {
         let pre_len = self.deque.len();
-        self.deque.resize(pre_len + 4096, 0);
+        self.resize(pre_len + 4096);
         match r.read(&mut self.deque.as_mut_slice()[pre_len..]) {
             Ok(len) => {
                 self.deque.truncate(pre_len + len);
