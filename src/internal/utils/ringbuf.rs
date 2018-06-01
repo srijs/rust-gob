@@ -18,24 +18,18 @@ impl RingBuf {
         self.deque.len()
     }
 
+    // FIXME: workaround for https://github.com/gnzlbg/slice_deque/pull/38
     fn resize(&mut self, new_len: usize) {
         let len = self.deque.len();
         let cap = self.deque.capacity();
 
-        // FIXME: workaround for https://github.com/gnzlbg/slice_deque/pull/38
         if new_len > cap {
             self.deque.reserve(new_len);
         }
 
         if new_len > len {
-            let delta = new_len - len;
-            // SAFETY: We advance the tail of the by delta amount,
-            // and then initialize the memory to a sequence of zeroes.
-            // This is safe, since we don't expose any unitialized memory.
-            unsafe {
-                self.deque.move_tail(delta as isize);
-                let ptr = self.deque.as_mut_slice()[len..].as_mut_ptr();
-                ::std::ptr::write_bytes(ptr, 0, delta);
+            while self.deque.len() < new_len {
+                self.deque.push_back(0);
             }
         } else {
             self.deque.truncate(new_len);
