@@ -1,8 +1,8 @@
 use std::io::Cursor;
 
-use serde::de::value::Error;
 use serde::de::{DeserializeSeed, Deserializer, IntoDeserializer, SeqAccess, Visitor};
 
+use error::Error;
 use internal::gob::Message;
 
 struct ComplexSeqAccess<'t, 'de>

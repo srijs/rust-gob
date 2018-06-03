@@ -3,10 +3,10 @@
 use std::io::{Cursor, Read};
 
 use bytes::Buf;
-use serde::de::value::Error;
 use serde::de::{IgnoredAny, Visitor};
 use serde::{self, Deserialize};
 
+use error::Error;
 use internal::gob::{Message, Stream};
 use internal::types::{TypeId, Types, WireType};
 use internal::utils::{Bow, RingBuf};

@@ -1,9 +1,9 @@
 use std::io::Cursor;
 
-use serde::de::value::Error;
 use serde::de::{DeserializeSeed, Deserializer, MapAccess, Visitor};
 
 use super::FieldValueDeserializer;
+use error::Error;
 use internal::gob::Message;
 use internal::types::{MapType, Types};
 

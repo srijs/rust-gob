@@ -1,8 +1,8 @@
 use std::io::Write;
 
-use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 
+use error::Error;
 use internal::gob::Stream;
 use internal::ser::{SerializationCtx, SerializeStructValue};
 use internal::types::TypeId;

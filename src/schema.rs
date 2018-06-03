@@ -2,11 +2,11 @@
 
 use std::io::Write;
 
-use serde::de::value::Error;
 use serde::{Deserialize, Deserializer};
 use serde::{Serialize, Serializer};
 use serde_schema::types::Type;
 
+use error::Error;
 use internal::gob::Stream;
 use internal::ser::SerializeWireTypes;
 use internal::utils::UniqMap;

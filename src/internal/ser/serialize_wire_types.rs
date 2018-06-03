@@ -1,8 +1,8 @@
-use serde::de::value::Error;
 use serde::ser::{SerializeSeq, SerializeStruct};
 use serde::{Serialize, Serializer};
 use serde_schema::types::{EnumVariant, StructField, Type};
 
+use error::Error;
 use schema::{Schema, TypeId};
 
 use super::{FieldValueSerializer, SerializationCtx};

@@ -2,12 +2,12 @@ use std::borrow::{Borrow, BorrowMut};
 use std::io::Write;
 
 use serde::Serialize;
-use serde::de::value::Error;
 use serde::ser::{self, Impossible};
 
 use internal::gob::{Message, Stream};
 use internal::types::TypeId;
 
+use error::Error;
 use schema::Schema;
 
 mod serialize_struct;

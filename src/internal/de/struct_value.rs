@@ -1,11 +1,11 @@
 use std::io::Cursor;
 
 use serde;
-use serde::de::value::Error;
 use serde::de::{DeserializeSeed, Deserializer, IntoDeserializer, Visitor};
 use serde::de::{EnumAccess, MapAccess, VariantAccess};
 
 use super::FieldValueDeserializer;
+use error::Error;
 use internal::gob::Message;
 use internal::types::{FieldType, StructType, Types};
 
@@ -61,8 +61,8 @@ impl<'t, 'de> MapAccess<'de> for StructAccess<'t, 'de> {
         self.field_no += field_delta as i64;
         let field = self.current_field()?;
 
-        let de = <&str as IntoDeserializer>::into_deserializer(&field.name);
-        let value = seed.deserialize(de).map_err(|err: Error| err)?;
+        let de = <&str as IntoDeserializer<'_, Error>>::into_deserializer(&field.name);
+        let value = seed.deserialize(de)?;
         Ok(Some(value))
     }
 

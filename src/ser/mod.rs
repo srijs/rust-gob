@@ -3,7 +3,6 @@
 use std::io::Write;
 
 use serde::Serialize;
-use serde::de::value::Error;
 use serde::ser::{self, Impossible};
 use serde_schema::{SchemaSerialize, SchemaSerializer};
 
@@ -11,6 +10,7 @@ use internal::gob::Stream;
 use internal::ser::{FieldValueSerializer, SerializationCtx, SerializeVariantValue};
 use internal::utils::Bow;
 
+use error::Error;
 pub use schema::{Schema, TypeId};
 
 mod serialize_struct;

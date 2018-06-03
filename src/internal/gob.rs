@@ -2,13 +2,22 @@ use std::io::{self, Cursor, Read, Write};
 
 use bytes::{Buf, BufMut};
 
+use error::Error;
 use internal::utils::RingBuf;
 
 #[derive(Debug)]
-pub(crate) enum Error {
-    IncompleteMessage,
-    IntegerOverflow,
-    Io(io::Error),
+pub(crate) enum MessageReadError {
+    Incomplete,
+    Parse(String),
+}
+
+impl From<MessageReadError> for Error {
+    fn from(err: MessageReadError) -> Error {
+        match err {
+            MessageReadError::Incomplete => Error::deserialize("message incomplete"),
+            MessageReadError::Parse(reason) => Error::deserialize(reason),
+        }
+    }
 }
 
 pub(crate) struct Message<B> {
@@ -35,9 +44,9 @@ impl<B> Message<B> {
 
 impl<B: Buf> Message<B> {
     #[inline]
-    pub fn read_uint(&mut self) -> Result<u64, Error> {
+    pub fn read_uint(&mut self) -> Result<u64, MessageReadError> {
         if self.buf.remaining() < 1 {
-            return Err(Error::IncompleteMessage);
+            return Err(MessageReadError::Incomplete);
         }
         let u7_or_len = self.buf.get_u8();
         if u7_or_len < 128 {
@@ -45,13 +54,13 @@ impl<B: Buf> Message<B> {
         }
         let len = !u7_or_len + 1;
         if self.buf.remaining() < len as usize {
-            return Err(Error::IncompleteMessage);
+            return Err(MessageReadError::Incomplete);
         }
         Ok(self.buf.get_uint_be(len as usize))
     }
 
     #[inline]
-    pub fn read_int(&mut self) -> Result<i64, Error> {
+    pub fn read_int(&mut self) -> Result<i64, MessageReadError> {
         let bits = self.read_uint()?;
         let sign = bits & 1;
         let sint = (bits >> 1) as i64;
@@ -63,25 +72,25 @@ impl<B: Buf> Message<B> {
     }
 
     #[inline]
-    pub fn read_float(&mut self) -> Result<f64, Error> {
+    pub fn read_float(&mut self) -> Result<f64, MessageReadError> {
         let bits = self.read_uint()?;
         Ok(f64::from_bits(bits.swap_bytes()))
     }
 
     #[inline]
-    pub fn read_bool(&mut self) -> Result<bool, Error> {
+    pub fn read_bool(&mut self) -> Result<bool, MessageReadError> {
         match self.read_uint()? {
             0 => Ok(false),
             1 => Ok(true),
-            _ => Err(Error::IntegerOverflow),
+            _ => Err(MessageReadError::Parse("integer overflow".into())),
         }
     }
 
     #[inline]
-    pub fn read_bytes_len(&mut self) -> Result<usize, Error> {
+    pub fn read_bytes_len(&mut self) -> Result<usize, MessageReadError> {
         let len = self.read_uint()?;
         if (self.buf.remaining() as u64) < len {
-            return Err(Error::IncompleteMessage);
+            return Err(MessageReadError::Incomplete);
         }
         Ok(len as usize)
     }
@@ -161,7 +170,8 @@ impl<Io> Stream<Io> {
 
 impl<Io: Write> Stream<Io> {
     fn write_buf(&mut self, buf: &[u8]) -> Result<(), Error> {
-        self.inner.write_all(buf).map_err(|err| Error::Io(err))
+        self.inner.write_all(buf)?;
+        Ok(())
     }
 
     pub fn write_section(&mut self, type_id: i64, buf: &[u8]) -> Result<(), Error> {
@@ -180,7 +190,7 @@ impl<Io: Write> Stream<Io> {
 impl<Io: Read> Stream<Io> {
     fn read_section_len(&mut self, buf: &mut RingBuf) -> Result<Option<u64>, Error> {
         if buf.len() == 0 {
-            let n = buf.read_from(&mut self.inner).map_err(Error::Io)?;
+            let n = buf.read_from(&mut self.inner)?;
             if n == 0 {
                 return Ok(None);
             }
@@ -199,16 +209,16 @@ impl<Io: Read> Stream<Io> {
                     buf.advance(position);
                     return Ok(Some(len));
                 }
-                Err(Error::IncompleteMessage) => {
-                    let n = buf.read_from(&mut self.inner).map_err(Error::Io)?;
+                Err(MessageReadError::Incomplete) => {
+                    let n = buf.read_from(&mut self.inner)?;
                     if n > 0 {
                         continue;
                     } else {
-                        return Err(Error::Io(io::ErrorKind::UnexpectedEof.into()));
+                        return Err(io::Error::from(io::ErrorKind::UnexpectedEof).into());
                     }
                 }
-                Err(err) => {
-                    return Err(err);
+                Err(MessageReadError::Parse(reason)) => {
+                    return Err(Error::deserialize(reason));
                 }
             }
         }
@@ -221,12 +231,13 @@ impl<Io: Read> Stream<Io> {
         };
         let buf_len = buf.len();
         if buf_len < msg_len {
-            buf.read_from_exact(&mut self.inner, msg_len - buf_len)
-                .map_err(Error::Io)?;
+            buf.read_from_exact(&mut self.inner, msg_len - buf_len)?;
         }
         let (type_id, position) = {
             let mut cursor = Cursor::new(buf.bytes());
-            let type_id = Message::new(&mut cursor).read_int()?;
+            let type_id = Message::new(&mut cursor)
+                .read_int()
+                .map_err(|err| Error::deserialize(format!("failed to read type id: {:?}", err)))?;
             (type_id, cursor.position() as usize)
         };
         buf.advance(position);

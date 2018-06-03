@@ -1,9 +1,9 @@
 use std::io::Cursor;
 
 use serde;
-use serde::de::value::Error;
 use serde::de::{Deserializer, IgnoredAny, Visitor};
 
+use error::Error;
 use internal::gob::Message;
 use internal::types::{TypeId, Types, WireType};
 

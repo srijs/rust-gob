@@ -1,8 +1,8 @@
 use std::borrow::Borrow;
 
-use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 
+use error::Error;
 use internal::types::TypeId;
 use schema::Schema;
 

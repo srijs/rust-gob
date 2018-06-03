@@ -1,9 +1,9 @@
 use std::borrow::Borrow;
 
-use serde::de::value::Error;
 use serde::ser::{self, Serialize};
 use serde_schema::types::{EnumVariant, Type};
 
+use error::Error;
 use internal::types::TypeId;
 use schema::Schema;
 

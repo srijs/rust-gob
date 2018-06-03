@@ -1,9 +1,9 @@
 use std::io::Cursor;
 
-use serde::de::value::Error;
 use serde::de::{self, DeserializeSeed, Deserializer, Visitor};
 
 use super::FieldValueDeserializer;
+use error::Error;
 use internal::gob::Message;
 use internal::types::{TypeId, Types};
 

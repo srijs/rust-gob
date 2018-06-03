@@ -1,10 +1,10 @@
 use std::io::Cursor;
 
 use bytes::Buf;
-use serde::de::value::Error;
 use serde::de::{IgnoredAny, Visitor};
 use serde::{self, Deserialize};
 
+use error::Error;
 use internal::gob::Message;
 use internal::types::{TypeId, Types, WireType};
 
