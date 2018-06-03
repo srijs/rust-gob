@@ -47,39 +47,39 @@ impl<R> StreamDeserializer<R> {
     where
         R: Read,
     {
-        if let Some(len) = self.prev_len {
+        if let Some(len) = self.prev_len.take() {
             self.buffer.advance(len);
         }
         loop {
-            let (type_id, len) = match self.stream.read_section(&mut self.buffer)? {
-                Some((type_id, len)) => (type_id, len),
+            let header = match self.stream.read_section(&mut self.buffer)? {
+                Some(header) => header,
                 None => return Ok(None),
             };
 
-            if type_id >= 0 {
-                let slice = &self.buffer.bytes()[..len];
+            if header.type_id >= 0 {
+                let slice = &self.buffer.bytes()[header.payload_range.clone()];
                 let msg = Message::new(Cursor::new(slice));
-                self.prev_len = Some(len);
+                self.prev_len = Some(header.payload_range.end);
                 return Ok(Some(Deserializer {
                     defs: Bow::Borrowed(&mut self.defs),
                     msg: msg,
-                    type_id: Some(TypeId(type_id)),
+                    type_id: Some(TypeId(header.type_id)),
                 }));
             }
 
             let wire_type = {
-                let slice = &self.buffer.bytes()[..len];
+                let slice = &self.buffer.bytes()[header.payload_range.clone()];
                 let mut msg = Message::new(Cursor::new(slice));
                 let de = FieldValueDeserializer::new(TypeId::WIRE_TYPE, &self.defs, &mut msg);
                 WireType::deserialize(de)
             }?;
 
-            if -type_id != wire_type.common().id.0 {
-                return Err(serde::de::Error::custom(format!("type id mismatch")));
+            if -header.type_id != wire_type.common().id.0 {
+                return Err(Error::deserialize("type id mismatch"));
             }
 
             self.defs.insert(wire_type);
-            self.buffer.advance(len);
+            self.buffer.advance(header.payload_range.end);
         }
     }
 

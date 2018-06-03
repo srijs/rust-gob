@@ -1,4 +1,5 @@
 use std::io::{self, Cursor, Read, Write};
+use std::ops::Range;
 
 use bytes::{Buf, BufMut};
 
@@ -185,8 +186,41 @@ impl<Io: Write> Stream<Io> {
     }
 }
 
+#[derive(Clone)]
+pub(crate) struct SectionHeader {
+    pub(crate) type_id: i64,
+    pub(crate) payload_range: Range<usize>,
+}
+
 impl<Io: Read> Stream<Io> {
-    fn read_section_len(&mut self, buf: &mut RingBuf) -> Result<Option<u64>, Error> {
+    fn parse_section(&mut self, bytes: &[u8]) -> Result<SectionHeader, MessageReadError> {
+        let mut msg = Message::new(Cursor::new(bytes));
+        //
+        //  <---> message offset
+        //        <--------------------> message length
+        // [ len | type id | payload... ]
+        //  <-------------> payload offset
+        //                  <----------> payload length
+        //
+        let msg_length = msg.read_uint()?;
+        let msg_offset = msg.get_ref().position() as usize;
+        let type_id = msg.read_int()?;
+        let payload_offset = msg.get_ref().position() as usize;
+        let payload_length = msg_length as usize - (payload_offset - msg_offset);
+        if bytes.len() < payload_offset + payload_length {
+            Err(MessageReadError::Incomplete)
+        } else {
+            Ok(SectionHeader {
+                type_id,
+                payload_range: Range {
+                    start: payload_offset,
+                    end: payload_offset + payload_length,
+                },
+            })
+        }
+    }
+
+    pub fn read_section(&mut self, buf: &mut RingBuf) -> Result<Option<SectionHeader>, Error> {
         if buf.len() == 0 {
             let n = buf.read_from(&mut self.inner)?;
             if n == 0 {
@@ -194,24 +228,13 @@ impl<Io: Read> Stream<Io> {
             }
         }
         loop {
-            let (result, position) = {
-                let mut cursor = Cursor::new(buf.bytes());
-                let result = {
-                    let mut msg = Message::new(&mut cursor);
-                    msg.read_uint()
-                };
-                (result, cursor.position() as usize)
-            };
-            match result {
-                Ok(len) => {
-                    buf.advance(position);
-                    return Ok(Some(len));
+            match self.parse_section(buf.bytes()) {
+                Ok(header) => {
+                    return Ok(Some(header));
                 }
                 Err(MessageReadError::Incomplete) => {
                     let n = buf.read_from(&mut self.inner)?;
-                    if n > 0 {
-                        continue;
-                    } else {
+                    if n == 0 {
                         return Err(io::Error::from(io::ErrorKind::UnexpectedEof).into());
                     }
                 }
@@ -220,25 +243,5 @@ impl<Io: Read> Stream<Io> {
                 }
             }
         }
-    }
-
-    pub fn read_section(&mut self, buf: &mut RingBuf) -> Result<Option<(i64, usize)>, Error> {
-        let msg_len = match self.read_section_len(buf)? {
-            Some(len) => len as usize,
-            None => return Ok(None),
-        };
-        let buf_len = buf.len();
-        if buf_len < msg_len {
-            buf.read_from_exact(&mut self.inner, msg_len - buf_len)?;
-        }
-        let (type_id, position) = {
-            let mut cursor = Cursor::new(buf.bytes());
-            let type_id = Message::new(&mut cursor)
-                .read_int()
-                .map_err(|err| Error::deserialize(format!("failed to read type id: {:?}", err)))?;
-            (type_id, cursor.position() as usize)
-        };
-        buf.advance(position);
-        Ok(Some((type_id, msg_len - position)))
     }
 }
