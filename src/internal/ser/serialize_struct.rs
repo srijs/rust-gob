@@ -62,7 +62,7 @@ impl<S: Borrow<Schema>> ser::SerializeStruct for SerializeStructValue<S> {
         let mut ctx = self.ctx.take().unwrap();
         let pre_pos = ctx.value.get_ref().len();
         let field_delta = self.current_field_idx as i64 - self.last_serialized_field_idx;
-        ctx.value.write_uint(field_delta as u64)?;
+        ctx.value.write_uint(field_delta as u64);
         let mut ok = {
             let de = FieldValueSerializer {
                 ctx,
@@ -91,7 +91,7 @@ impl<S: Borrow<Schema>> ser::SerializeStruct for SerializeStructValue<S> {
 
     fn end(mut self) -> Result<Self::Ok, Self::Error> {
         let mut ctx = self.ctx.take().unwrap();
-        ctx.value.write_uint(0)?;
+        ctx.value.write_uint(0);
 
         Ok(SerializationOk {
             ctx,

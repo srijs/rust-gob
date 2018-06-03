@@ -45,12 +45,12 @@ impl<S: Borrow<Schema>> SerializeVariantValue<S> {
     }
 
     fn write_header(ctx: &mut SerializationCtx<S>, idx: u32) -> Result<(), Error> {
-        ctx.value.write_uint(idx as u64 + 1)?;
+        ctx.value.write_uint(idx as u64 + 1);
         Ok(())
     }
 
     fn write_footer(ctx: &mut SerializationCtx<S>) -> Result<(), Error> {
-        ctx.value.write_uint(0)?;
+        ctx.value.write_uint(0);
         Ok(())
     }
 
@@ -134,7 +134,7 @@ impl<S: Borrow<Schema>> ser::SerializeStructVariant for SerializeStructVariantVa
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
         let mut ok = ser::SerializeStruct::end(self.inner)?;
-        ok.ctx.value.write_uint(0)?;
+        ok.ctx.value.write_uint(0);
         ok.is_empty = false;
         Ok(ok)
     }

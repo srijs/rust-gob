@@ -62,7 +62,7 @@ impl<S: Borrow<Schema>> ser::SerializeSeq for SerializeSeqValue<S> {
     {
         let mut ctx = self.ctx.take().unwrap();
         if self.needs_init {
-            ctx.value.write_uint(self.len as u64)?;
+            ctx.value.write_uint(self.len as u64);
             self.needs_init = false;
         }
         let de = FieldValueSerializer {
@@ -79,7 +79,7 @@ impl<S: Borrow<Schema>> ser::SerializeSeq for SerializeSeqValue<S> {
         let is_empty = self.len == 0;
 
         if is_empty {
-            ctx.value.write_uint(0)?;
+            ctx.value.write_uint(0);
         }
 
         Ok(SerializationOk { ctx, is_empty })

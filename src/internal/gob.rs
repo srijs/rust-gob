@@ -98,7 +98,7 @@ impl<B: Buf> Message<B> {
 
 impl<B: BufMut> Message<B> {
     #[inline]
-    pub fn write_uint(&mut self, n: u64) -> Result<(), Error> {
+    pub fn write_uint(&mut self, n: u64) {
         if n < 128 {
             self.buf.put_u8(n as u8);
         } else {
@@ -106,11 +106,10 @@ impl<B: BufMut> Message<B> {
             self.buf.put_u8(!(nbytes - 1));
             self.buf.put_uint_be(n, nbytes as usize);
         }
-        Ok(())
     }
 
     #[inline]
-    pub fn write_bool(&mut self, b: bool) -> Result<(), Error> {
+    pub fn write_bool(&mut self, b: bool) {
         match b {
             false => self.write_uint(0),
             true => self.write_uint(1),
@@ -118,27 +117,26 @@ impl<B: BufMut> Message<B> {
     }
 
     #[inline]
-    pub fn write_int(&mut self, n: i64) -> Result<(), Error> {
+    pub fn write_int(&mut self, n: i64) {
         let u: u64;
         if n < 0 {
             u = (!(n as u64) << 1) | 1;
         } else {
             u = (n as u64) << 1;
         }
-        self.write_uint(u)
+        self.write_uint(u);
     }
 
     #[inline]
-    pub fn write_float(&mut self, n: f64) -> Result<(), Error> {
+    pub fn write_float(&mut self, n: f64) {
         let bits = n.to_bits();
-        self.write_uint(bits.swap_bytes())
+        self.write_uint(bits.swap_bytes());
     }
 
     #[inline]
-    pub fn write_bytes(&mut self, bytes: &[u8]) -> Result<(), Error> {
-        self.write_uint(bytes.len() as u64)?;
+    pub fn write_bytes(&mut self, bytes: &[u8]) {
+        self.write_uint(bytes.len() as u64);
         self.buf.put_slice(bytes);
-        Ok(())
     }
 }
 
@@ -176,10 +174,10 @@ impl<Io: Write> Stream<Io> {
 
     pub fn write_section(&mut self, type_id: i64, buf: &[u8]) -> Result<(), Error> {
         let mut type_id_msg = Message::new(Cursor::new([0u8; 9]));
-        type_id_msg.write_int(type_id)?;
+        type_id_msg.write_int(type_id);
         let type_id_pos = type_id_msg.get_ref().position() as usize;
         let mut len_msg = Message::new(Cursor::new([0u8; 9]));
-        len_msg.write_uint((buf.len() + type_id_pos) as u64)?;
+        len_msg.write_uint((buf.len() + type_id_pos) as u64);
         let len_pos = len_msg.get_ref().position() as usize;
         self.write_buf(&len_msg.get_ref().get_ref()[..len_pos])?;
         self.write_buf(&type_id_msg.get_ref().get_ref()[..type_id_pos])?;

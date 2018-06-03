@@ -93,7 +93,7 @@ where
     #[inline]
     fn serialize_bool(mut self, v: bool) -> Result<Self::Ok, Self::Error> {
         self.check_type(TypeId::BOOL)?;
-        self.ctx.value.write_bool(v)?;
+        self.ctx.value.write_bool(v);
         Ok(SerializationOk {
             ctx: self.ctx,
             is_empty: v == false,
@@ -114,7 +114,7 @@ where
 
     fn serialize_i64(mut self, v: i64) -> Result<Self::Ok, Self::Error> {
         self.check_type(TypeId::INT)?;
-        self.ctx.value.write_int(v)?;
+        self.ctx.value.write_int(v);
         Ok(SerializationOk {
             ctx: self.ctx,
             is_empty: v == 0,
@@ -135,7 +135,7 @@ where
 
     fn serialize_u64(mut self, v: u64) -> Result<Self::Ok, Self::Error> {
         self.check_type(TypeId::UINT)?;
-        self.ctx.value.write_uint(v)?;
+        self.ctx.value.write_uint(v);
         Ok(SerializationOk {
             ctx: self.ctx,
             is_empty: v == 0,
@@ -148,7 +148,7 @@ where
 
     fn serialize_f64(mut self, v: f64) -> Result<Self::Ok, Self::Error> {
         self.check_type(TypeId::FLOAT)?;
-        self.ctx.value.write_float(v)?;
+        self.ctx.value.write_float(v);
         Ok(SerializationOk {
             ctx: self.ctx,
             is_empty: false,
@@ -161,7 +161,7 @@ where
 
     fn serialize_str(mut self, v: &str) -> Result<Self::Ok, Self::Error> {
         self.check_type(TypeId::STRING)?;
-        self.ctx.value.write_bytes(v.as_bytes())?;
+        self.ctx.value.write_bytes(v.as_bytes());
         Ok(SerializationOk {
             ctx: self.ctx,
             is_empty: v.len() == 0,
@@ -170,7 +170,7 @@ where
 
     fn serialize_bytes(mut self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
         self.check_type(TypeId::BYTES)?;
-        self.ctx.value.write_bytes(v)?;
+        self.ctx.value.write_bytes(v);
         Ok(SerializationOk {
             ctx: self.ctx,
             is_empty: v.len() == 0,

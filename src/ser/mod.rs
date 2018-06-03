@@ -131,7 +131,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     type SerializeStructVariant = SerializeStructVariant<'t, W>;
 
     fn serialize_bool(mut self, v: bool) -> Result<Self::Ok, Self::Error> {
-        self.ctx.value.write_uint(0)?;
+        self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
@@ -155,7 +155,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     }
 
     fn serialize_i64(mut self, v: i64) -> Result<Self::Ok, Self::Error> {
-        self.ctx.value.write_uint(0)?;
+        self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
@@ -179,7 +179,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     }
 
     fn serialize_u64(mut self, v: u64) -> Result<Self::Ok, Self::Error> {
-        self.ctx.value.write_uint(0)?;
+        self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
@@ -195,7 +195,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     }
 
     fn serialize_f64(mut self, v: f64) -> Result<Self::Ok, Self::Error> {
-        self.ctx.value.write_uint(0)?;
+        self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
@@ -211,7 +211,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     }
 
     fn serialize_str(mut self, v: &str) -> Result<Self::Ok, Self::Error> {
-        self.ctx.value.write_uint(0)?;
+        self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
@@ -223,7 +223,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     }
 
     fn serialize_bytes(mut self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
-        self.ctx.value.write_uint(0)?;
+        self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
@@ -235,7 +235,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     }
 
     fn serialize_none(mut self) -> Result<Self::Ok, Self::Error> {
-        self.ctx.value.write_uint(0)?;
+        self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
@@ -302,12 +302,12 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     }
 
     fn serialize_seq(mut self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
-        self.ctx.value.write_uint(0)?;
+        self.ctx.value.write_uint(0);
         SerializeSeq::new(len, self.type_id, self.ctx, self.out)
     }
 
     fn serialize_tuple(mut self, _len: usize) -> Result<Self::SerializeTuple, Self::Error> {
-        self.ctx.value.write_uint(0)?;
+        self.ctx.value.write_uint(0);
         SerializeTuple::homogeneous(self.type_id, self.ctx, self.out)
     }
 
@@ -330,7 +330,7 @@ impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
     }
 
     fn serialize_map(mut self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
-        self.ctx.value.write_uint(0)?;
+        self.ctx.value.write_uint(0);
         SerializeMap::new(len, self.type_id, self.ctx, self.out)
     }
 
