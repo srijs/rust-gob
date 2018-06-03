@@ -1,7 +1,7 @@
 use std::fmt;
 use std::io;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorKind {
     Io(io::ErrorKind),
     Serialize,
