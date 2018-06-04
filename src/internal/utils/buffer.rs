@@ -3,7 +3,7 @@ use std::io::{Read, Result as IoResult};
 use bytes::Buf;
 
 pub struct Buffer {
-    bytes: Vec<u8>
+    bytes: Vec<u8>,
 }
 
 impl Buffer {
@@ -50,7 +50,7 @@ impl Buf for Buffer {
 
     #[inline]
     fn advance(&mut self, cnt: usize) {
-        let len =  self.len();
+        let len = self.len();
         if cnt > len {
             panic!("cannot advance beyond the end of the RingBuf");
         }

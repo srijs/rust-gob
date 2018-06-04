@@ -7,7 +7,7 @@ use serde::de::{EnumAccess, MapAccess, VariantAccess};
 use super::FieldValueDeserializer;
 use error::Error;
 use internal::gob::Message;
-use internal::types::{FieldType, StructType, Types};
+use internal::types::{FieldType, StructType, TypeId, Types};
 
 struct StructAccess<'t, 'de>
 where
@@ -16,6 +16,7 @@ where
     def: &'t StructType,
     defs: &'t Types,
     field_no: i64,
+    field_id: Option<TypeId>,
     msg: &'t mut Message<Cursor<&'de [u8]>>,
 }
 
@@ -29,19 +30,19 @@ impl<'t, 'de> StructAccess<'t, 'de> {
             def,
             defs,
             field_no: -1,
+            field_id: None,
             msg,
         }
     }
 
     fn current_field(&self) -> Result<&'t FieldType, Error> {
         let field_no = self.field_no as usize;
-        if field_no >= self.def.fields.len() {
-            return Err(serde::de::Error::custom(format!(
+        self.def.fields.get(field_no).ok_or_else(|| {
+            serde::de::Error::custom(format!(
                 "field number overflow ({}) on type {:?}",
                 field_no, self.def
-            )));
-        }
-        Ok(&self.def.fields[field_no])
+            ))
+        })
     }
 }
 
@@ -60,6 +61,7 @@ impl<'t, 'de> MapAccess<'de> for StructAccess<'t, 'de> {
 
         self.field_no += field_delta as i64;
         let field = self.current_field()?;
+        self.field_id = Some(field.id);
 
         let de = <&str as IntoDeserializer<'_, Error>>::into_deserializer(&field.name);
         let value = seed.deserialize(de)?;
@@ -70,8 +72,9 @@ impl<'t, 'de> MapAccess<'de> for StructAccess<'t, 'de> {
     where
         V: DeserializeSeed<'de>,
     {
-        let field = self.current_field()?;
-        let de = FieldValueDeserializer::new(field.id, self.defs, &mut self.msg);
+        let field_id = self.field_id
+            .expect("next_key_seed must be called before next_value_seed");
+        let de = FieldValueDeserializer::new(field_id, self.defs, &mut self.msg);
         seed.deserialize(de)
     }
 }
