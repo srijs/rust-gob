@@ -4,7 +4,7 @@ use std::ops::Range;
 use bytes::{Buf, BufMut};
 
 use error::Error;
-use internal::utils::RingBuf;
+use internal::utils::Buffer;
 
 #[derive(Debug)]
 pub(crate) enum MessageReadError {
@@ -202,25 +202,24 @@ impl<Io: Read> Stream<Io> {
         //  <-------------> payload offset
         //                  <----------> payload length
         //
-        let msg_length = msg.read_uint()?;
+        let msg_length = msg.read_uint()? as usize;
         let msg_offset = msg.get_ref().position() as usize;
+        if bytes.len() < msg_offset + msg_length {
+            return Err(MessageReadError::Incomplete);
+        }
         let type_id = msg.read_int()?;
         let payload_offset = msg.get_ref().position() as usize;
         let payload_length = msg_length as usize - (payload_offset - msg_offset);
-        if bytes.len() < payload_offset + payload_length {
-            Err(MessageReadError::Incomplete)
-        } else {
-            Ok(SectionHeader {
-                type_id,
-                payload_range: Range {
-                    start: payload_offset,
-                    end: payload_offset + payload_length,
-                },
-            })
-        }
+        Ok(SectionHeader {
+            type_id,
+            payload_range: Range {
+                start: payload_offset,
+                end: payload_offset + payload_length,
+            },
+        })
     }
 
-    pub fn read_section(&mut self, buf: &mut RingBuf) -> Result<Option<SectionHeader>, Error> {
+    pub fn read_section(&mut self, buf: &mut Buffer) -> Result<Option<SectionHeader>, Error> {
         if buf.len() == 0 {
             let n = buf.read_from(&mut self.inner)?;
             if n == 0 {

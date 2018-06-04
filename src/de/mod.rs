@@ -9,7 +9,7 @@ use serde::{self, Deserialize};
 use error::Error;
 use internal::gob::{Message, Stream};
 use internal::types::{TypeId, Types, WireType};
-use internal::utils::{Bow, RingBuf};
+use internal::utils::{Bow, Buffer};
 
 use internal::de::FieldValueDeserializer;
 use internal::de::ValueDeserializer;
@@ -17,7 +17,7 @@ use internal::de::ValueDeserializer;
 pub struct StreamDeserializer<R> {
     defs: Types,
     stream: Stream<R>,
-    buffer: RingBuf,
+    buffer: Buffer,
     prev_len: Option<usize>,
 }
 
@@ -26,7 +26,7 @@ impl<R> StreamDeserializer<R> {
         StreamDeserializer {
             defs: Types::new(),
             stream: Stream::new(read),
-            buffer: RingBuf::new(),
+            buffer: Buffer::new(),
             prev_len: None,
         }
     }
