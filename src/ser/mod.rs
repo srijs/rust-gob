@@ -2,8 +2,8 @@
 
 use std::io::Write;
 
-use serde::Serialize;
 use serde::ser::{self, Impossible};
+use serde::Serialize;
 use serde_schema::SchemaSerialize;
 
 use internal::gob::Stream;

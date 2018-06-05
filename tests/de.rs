@@ -7,7 +7,7 @@ extern crate serde_derive;
 use std::collections::HashMap;
 use std::io::Cursor;
 
-use gob::{Deserializer, StreamDeserializer, error::ErrorKind};
+use gob::{error::ErrorKind, Deserializer, StreamDeserializer};
 use serde::Deserialize;
 use serde_bytes::{ByteBuf, Bytes};
 
