@@ -4,7 +4,7 @@ use std::io::Write;
 
 use serde::Serialize;
 use serde::ser::{self, Impossible};
-use serde_schema::{SchemaSerialize, SchemaSerializer};
+use serde_schema::SchemaSerialize;
 
 use internal::gob::Stream;
 use internal::ser::{FieldValueSerializer, SerializationCtx, SerializeVariantValue};
@@ -71,13 +71,23 @@ impl<W> StreamSerializer<W> {
         }
     }
 
+    pub fn schema_mut(&mut self) -> &mut Schema {
+        &mut self.schema
+    }
+
+    pub fn serializer<'a>(&'a mut self, id: TypeId) -> Result<Serializer<'a, &'a mut W>, Error> {
+        let ctx = SerializationCtx::with_schema(Bow::Borrowed(&mut self.schema));
+        Ok(Serializer::with_context(id, ctx, self.out.borrow_mut()))
+    }
+
     /// Serialize a value onto the stream.
     pub fn serialize<T>(&mut self, value: &T) -> Result<(), Error>
     where
         T: SchemaSerialize,
         W: Write,
     {
-        value.schema_serialize(self)
+        let type_id = T::schema_register(&mut self.schema)?;
+        self.serialize_with_type_id(type_id, value)
     }
 
     pub fn serialize_with_type_id<T>(&mut self, type_id: TypeId, value: &T) -> Result<(), Error>
@@ -98,23 +108,6 @@ impl<W> StreamSerializer<W> {
 
     pub fn into_inner(self) -> W {
         self.out.into_inner()
-    }
-}
-
-impl<'t, W: Write> ::serde_schema::SchemaSerializer for &'t mut StreamSerializer<W> {
-    type Ok = ();
-    type Error = Error;
-    type TypeId = TypeId;
-    type Schema = Schema;
-    type Serializer = Serializer<'t, &'t mut W>;
-
-    fn schema_mut(&mut self) -> &mut Self::Schema {
-        &mut self.schema
-    }
-
-    fn serializer(self, id: TypeId) -> Result<Self::Serializer, Self::Error> {
-        let ctx = SerializationCtx::with_schema(Bow::Borrowed(&mut self.schema));
-        Ok(Serializer::with_context(id, ctx, self.out.borrow_mut()))
     }
 }
 
