@@ -8,17 +8,23 @@ pub enum ErrorKind {
     Deserialize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Error {
     kind: ErrorKind,
-    message: String,
+    inner: ErrorInner,
+}
+
+#[derive(Debug)]
+enum ErrorInner {
+    Io(io::Error),
+    Other(String),
 }
 
 impl Error {
     pub(crate) fn deserialize<S: Into<String>>(message: S) -> Error {
         Error {
             kind: ErrorKind::Deserialize,
-            message: message.into(),
+            inner: ErrorInner::Other(message.into()),
         }
     }
 
@@ -29,12 +35,12 @@ impl Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "{}: {}",
-            ::std::error::Error::description(self),
-            self.message
-        )
+        match self.inner {
+            ErrorInner::Io(ref err) => write!(f, "i/o error: {}", err),
+            ErrorInner::Other(ref msg) => {
+                write!(f, "{}: {}", ::std::error::Error::description(self), msg)
+            }
+        }
     }
 }
 
@@ -52,7 +58,7 @@ impl ::serde::de::Error for Error {
     fn custom<T: fmt::Display>(msg: T) -> Error {
         Error {
             kind: ErrorKind::Deserialize,
-            message: msg.to_string(),
+            inner: ErrorInner::Other(msg.to_string()),
         }
     }
 }
@@ -61,7 +67,7 @@ impl ::serde::ser::Error for Error {
     fn custom<T: fmt::Display>(msg: T) -> Error {
         Error {
             kind: ErrorKind::Serialize,
-            message: msg.to_string(),
+            inner: ErrorInner::Other(msg.to_string()),
         }
     }
 }
@@ -70,7 +76,7 @@ impl From<io::Error> for Error {
     fn from(err: io::Error) -> Error {
         Error {
             kind: ErrorKind::Io(err.kind()),
-            message: err.to_string(),
+            inner: ErrorInner::Io(err),
         }
     }
 }
