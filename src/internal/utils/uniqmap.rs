@@ -1,28 +1,30 @@
 use std::collections::hash_map::RandomState;
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::hash::{BuildHasher, Hash, Hasher};
 
 use smallvec::SmallVec;
 
-pub struct UniqMap<K, V, S = RandomState> {
-    values: HashMap<K, V, S>,
-    lookup: HashMap<u64, SmallVec<[K; 4]>>,
+pub struct UniqMap<K, V> {
+    values: BTreeMap<K, V>,
+    lookup: BTreeMap<u64, SmallVec<[K; 4]>>,
+    state: RandomState,
 }
 
-impl<K: Eq + Hash + Clone, V: Eq + Hash> UniqMap<K, V, RandomState> {
-    pub fn new() -> UniqMap<K, V, RandomState> {
+impl<K: Ord + Clone, V: Eq + Hash> UniqMap<K, V> {
+    pub fn new() -> UniqMap<K, V> {
         UniqMap {
-            values: HashMap::new(),
-            lookup: HashMap::new(),
+            values: BTreeMap::new(),
+            lookup: BTreeMap::new(),
+            state: RandomState::new(),
         }
     }
 }
 
-impl<K: Eq + Hash + Clone, V: Eq + Hash, S: BuildHasher> UniqMap<K, V, S> {
+impl<K: Ord + Clone, V: Eq + Hash> UniqMap<K, V> {
     pub fn insert(&mut self, k: K, v: V) -> Option<K> {
-        use std::collections::hash_map::Entry;
+        use std::collections::btree_map::Entry;
 
-        let mut hasher = self.values.hasher().build_hasher();
+        let mut hasher = self.state.build_hasher();
         v.hash(&mut hasher);
         let hash = hasher.finish();
 
