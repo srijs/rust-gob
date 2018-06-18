@@ -1,5 +1,6 @@
 #![deny(warnings)]
 
+extern crate byteorder;
 extern crate bytes;
 #[macro_use]
 extern crate lazy_static;

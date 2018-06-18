@@ -1,6 +1,7 @@
 use std::io::{self, Cursor, Read, Write};
 use std::ops::Range;
 
+use byteorder::{BigEndian, ByteOrder};
 use bytes::{Buf, BufMut};
 
 use error::Error;
@@ -43,7 +44,7 @@ impl<B> Message<B> {
     }
 }
 
-impl<B: Buf> Message<B> {
+impl<B: LinearBuf> Message<B> {
     #[inline]
     pub fn read_uint(&mut self) -> Result<u64, MessageReadError> {
         if self.buf.remaining() < 1 {
@@ -57,7 +58,7 @@ impl<B: Buf> Message<B> {
         if self.buf.remaining() < len as usize {
             return Err(MessageReadError::Incomplete);
         }
-        Ok(self.buf.get_uint_be(len as usize))
+        Ok(self.buf.fast_get_uint_be(len as usize))
     }
 
     #[inline]
@@ -242,5 +243,26 @@ impl<Io: Read> Stream<Io> {
                 }
             }
         }
+    }
+}
+
+/// A `Buf` backed by linear memory, which can return a slice
+/// to _all_ remaining bytes.
+pub trait LinearBuf: Buf {
+    fn remaining_bytes(&self) -> &[u8];
+
+    fn fast_get_uint_be(&mut self, nbytes: usize) -> u64 {
+        let ret = {
+            let src = &self.remaining_bytes()[..nbytes];
+            BigEndian::read_uint(src, nbytes)
+        };
+        self.advance(nbytes);
+        ret
+    }
+}
+
+impl<T: AsRef<[u8]>> LinearBuf for io::Cursor<T> {
+    fn remaining_bytes(&self) -> &[u8] {
+        &self.get_ref().as_ref()[self.position() as usize..]
     }
 }
