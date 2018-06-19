@@ -1,13 +1,17 @@
 extern crate gob;
+extern crate partial_io;
 extern crate serde;
 extern crate serde_bytes;
 #[macro_use]
 extern crate serde_derive;
+#[macro_use]
+extern crate quickcheck;
 
 use std::collections::HashMap;
 use std::io::Cursor;
 
 use gob::{error::ErrorKind, Deserializer, StreamDeserializer};
+use partial_io::{GenWouldBlock, PartialRead, PartialWithErrors};
 use serde::Deserialize;
 use serde_bytes::{ByteBuf, Bytes};
 
@@ -444,65 +448,48 @@ fn unit_from_any() {
     assert!(stream.deserialize::<()>().unwrap().is_none());
 }
 
-#[test]
-fn non_blocking_io() {
-    struct NonBlockingRead {
-        cursor: Cursor<Vec<u8>>,
-        would_block: bool,
-    }
-
-    impl ::std::io::Read for NonBlockingRead {
-        fn read(&mut self, buf: &mut [u8]) -> ::std::io::Result<usize> {
-            if self.would_block {
-                self.would_block = false;
-                Err(::std::io::ErrorKind::WouldBlock.into())
-            } else {
-                self.would_block = true;
-                (&mut self.cursor).take(3).read(buf)
-            }
-        }
-    }
-
-    macro_rules! block {
-        ($e:expr) => {
-            loop {
-                #[allow(unreachable_patterns)]
-                match $e {
-                    Err(e) => {
-                        if e.kind() == ErrorKind::Io(::std::io::ErrorKind::WouldBlock) {
-                            continue;
-                        } else {
-                            break Err(e);
+quickcheck! {
+    fn non_blocking_io(seq: PartialWithErrors<GenWouldBlock>) -> bool {
+        macro_rules! block {
+            ($e:expr) => {
+                loop {
+                    #[allow(unreachable_patterns)]
+                    match $e {
+                        Err(e) => {
+                            if e.kind() == ErrorKind::Io(::std::io::ErrorKind::WouldBlock) {
+                                continue;
+                            } else {
+                                break Err(e);
+                            }
                         }
+                        Ok(x) => break Ok(x),
                     }
-                    Ok(x) => break Ok(x),
                 }
-            }
-        };
+            };
+        }
+
+        let buffer = include_bytes!("reference/output/non_empty_values.gob");
+        let reader = Cursor::new(buffer.as_ref().to_vec());
+        let partial_reader = PartialRead::new(reader, seq);
+        let mut stream = StreamDeserializer::new(partial_reader);
+
+        assert_eq!(true, block!(stream.deserialize::<bool>()).unwrap().unwrap());
+        assert_eq!(42u64, block!(stream.deserialize::<u64>()).unwrap().unwrap());
+        assert_eq!(42i64, block!(stream.deserialize::<i64>()).unwrap().unwrap());
+        assert_eq!(42f64, block!(stream.deserialize::<f64>()).unwrap().unwrap());
+        assert_eq!(
+            "foo",
+            block!(stream.deserialize::<String>()).unwrap().unwrap()
+        );
+        assert_eq!(
+            ByteBuf::from(vec![0x1, 0x2]),
+            block!(stream.deserialize::<ByteBuf>()).unwrap().unwrap()
+        );
+        assert_eq!(
+            vec![true, false],
+            block!(stream.deserialize::<Vec<bool>>()).unwrap().unwrap()
+        );
+
+        block!(stream.deserialize::<()>()).unwrap().is_none()
     }
-
-    let buffer = include_bytes!("reference/output/non_empty_values.gob");
-    let nbread = NonBlockingRead {
-        cursor: Cursor::new(buffer.as_ref().to_vec()),
-        would_block: true,
-    };
-    let mut stream = StreamDeserializer::new(nbread);
-
-    assert_eq!(true, block!(stream.deserialize::<bool>()).unwrap().unwrap());
-    assert_eq!(42u64, block!(stream.deserialize::<u64>()).unwrap().unwrap());
-    assert_eq!(42i64, block!(stream.deserialize::<i64>()).unwrap().unwrap());
-    assert_eq!(42f64, block!(stream.deserialize::<f64>()).unwrap().unwrap());
-    assert_eq!(
-        "foo",
-        block!(stream.deserialize::<String>()).unwrap().unwrap()
-    );
-    assert_eq!(
-        ByteBuf::from(vec![0x1, 0x2]),
-        block!(stream.deserialize::<ByteBuf>()).unwrap().unwrap()
-    );
-    assert_eq!(
-        vec![true, false],
-        block!(stream.deserialize::<Vec<bool>>()).unwrap().unwrap()
-    );
-    assert!(block!(stream.deserialize::<()>()).unwrap().is_none());
 }
