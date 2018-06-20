@@ -1,7 +1,12 @@
 #![deny(warnings)]
 
+#[cfg(test)]
+#[macro_use]
+extern crate quickcheck;
+
 extern crate byteorder;
 extern crate bytes;
+extern crate iovec;
 #[macro_use]
 extern crate lazy_static;
 #[macro_use]

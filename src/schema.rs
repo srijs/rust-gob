@@ -1,15 +1,13 @@
 //! Schema management
 
-use std::io::Write;
-
 use serde::{Deserialize, Deserializer};
 use serde::{Serialize, Serializer};
 use serde_schema::types::Type;
 
 use error::Error;
-use internal::gob::Stream;
 use internal::ser::SerializeWireTypes;
 use internal::utils::UniqMap;
+use ser::{Output, OutputPart};
 
 pub struct Schema {
     pending_wire_types: Vec<(TypeId, Vec<u8>)>,
@@ -30,9 +28,9 @@ impl Schema {
         ::internal::types::lookup_builtin(id).or_else(|| self.schema_types.get(&id))
     }
 
-    pub(crate) fn write_pending<W: Write>(&mut self, mut out: Stream<W>) -> Result<(), Error> {
+    pub(crate) fn write_pending<O: Output>(&mut self, mut o: O) -> Result<(), Error> {
         for (type_id, wire_type_buffer) in self.pending_wire_types.drain(..) {
-            out.write_section(-type_id.0, &wire_type_buffer)?;
+            o.serialize_part(OutputPart::new(-type_id.0, wire_type_buffer))?;
         }
         Ok(())
     }

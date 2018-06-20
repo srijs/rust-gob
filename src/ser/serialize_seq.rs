@@ -1,25 +1,24 @@
-use std::io::Write;
-
 use serde::ser::{self, Serialize};
 
 use error::Error;
-use internal::gob::Stream;
 use internal::ser::{SerializationCtx, SerializeSeqValue};
 use internal::types::TypeId;
 use internal::utils::Bow;
 use schema::Schema;
 
-pub struct SerializeSeq<'t, W> {
+use super::output::Output;
+
+pub struct SerializeSeq<'t, O> {
     inner: SerializeSeqValue<Bow<'t, Schema>>,
-    out: Stream<W>,
+    out: O,
 }
 
-impl<'t, W: Write> SerializeSeq<'t, W> {
+impl<'t, O: Output> SerializeSeq<'t, O> {
     pub(crate) fn new(
         len: Option<usize>,
         type_id: TypeId,
         ctx: SerializationCtx<Bow<'t, Schema>>,
-        out: Stream<W>,
+        out: O,
     ) -> Result<Self, Error> {
         Ok(SerializeSeq {
             inner: SerializeSeqValue::new(ctx, len, type_id)?,
@@ -28,7 +27,7 @@ impl<'t, W: Write> SerializeSeq<'t, W> {
     }
 }
 
-impl<'t, W: Write> ser::SerializeSeq for SerializeSeq<'t, W> {
+impl<'t, O: Output> ser::SerializeSeq for SerializeSeq<'t, O> {
     type Ok = ();
     type Error = Error;
 

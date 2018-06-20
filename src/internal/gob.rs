@@ -1,4 +1,4 @@
-use std::io::{self, Cursor, Read, Write};
+use std::io::{self, Cursor, Read};
 use std::ops::Range;
 
 use byteorder::{BigEndian, ByteOrder};
@@ -151,10 +151,6 @@ impl<Io> Stream<Io> {
         Stream { inner }
     }
 
-    pub fn borrow_mut(&mut self) -> Stream<&mut Io> {
-        Stream::new(self.get_mut())
-    }
-
     pub fn get_ref(&self) -> &Io {
         &self.inner
     }
@@ -165,25 +161,6 @@ impl<Io> Stream<Io> {
 
     pub fn into_inner(self) -> Io {
         self.inner
-    }
-}
-
-impl<Io: Write> Stream<Io> {
-    fn write_buf(&mut self, buf: &[u8]) -> Result<(), Error> {
-        self.inner.write_all(buf)?;
-        Ok(())
-    }
-
-    pub fn write_section(&mut self, type_id: i64, buf: &[u8]) -> Result<(), Error> {
-        let mut type_id_msg = Message::new(Cursor::new([0u8; 9]));
-        type_id_msg.write_int(type_id);
-        let type_id_pos = type_id_msg.get_ref().position() as usize;
-        let mut len_msg = Message::new(Cursor::new([0u8; 9]));
-        len_msg.write_uint((buf.len() + type_id_pos) as u64);
-        let len_pos = len_msg.get_ref().position() as usize;
-        self.write_buf(&len_msg.get_ref().get_ref()[..len_pos])?;
-        self.write_buf(&type_id_msg.get_ref().get_ref()[..type_id_pos])?;
-        self.write_buf(buf)
     }
 }
 

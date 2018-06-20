@@ -1,14 +1,14 @@
 use std::borrow::{Borrow, BorrowMut};
-use std::io::Write;
 
 use serde::ser::{self, Impossible};
 use serde::Serialize;
 
-use internal::gob::{Message, Stream};
+use internal::gob::Message;
 use internal::types::TypeId;
 
 use error::Error;
 use schema::Schema;
+use ser::{Output, OutputPart};
 
 mod serialize_struct;
 pub(crate) use self::serialize_struct::SerializeStructValue;
@@ -43,17 +43,13 @@ impl<S> SerializationCtx<S> {
         }
     }
 
-    pub(crate) fn flush<W: Write>(
-        &mut self,
-        type_id: TypeId,
-        mut writer: Stream<W>,
-    ) -> Result<(), Error>
+    pub(crate) fn flush<O: Output>(&mut self, type_id: TypeId, mut out: O) -> Result<(), Error>
     where
         S: BorrowMut<Schema>,
     {
-        self.schema.borrow_mut().write_pending(writer.borrow_mut())?;
-        writer.write_section(type_id.0, self.value.get_ref())?;
-        Ok(())
+        self.schema.borrow_mut().write_pending(&mut out)?;
+        let buffer = ::std::mem::replace(self.value.get_mut(), Vec::new());
+        out.serialize_part(OutputPart::new(type_id.0, buffer))
     }
 }
 

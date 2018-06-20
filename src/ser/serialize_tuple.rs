@@ -1,24 +1,23 @@
-use std::io::Write;
-
 use serde::ser::{self, Serialize};
 
 use error::Error;
-use internal::gob::Stream;
 use internal::ser::{SerializationCtx, SerializeTupleValue};
 use internal::types::TypeId;
 use internal::utils::Bow;
 use schema::Schema;
 
-pub struct SerializeTuple<'t, W> {
+use super::output::Output;
+
+pub struct SerializeTuple<'t, O> {
     inner: SerializeTupleValue<Bow<'t, Schema>>,
-    out: Stream<W>,
+    out: O,
 }
 
-impl<'t, W: Write> SerializeTuple<'t, W> {
+impl<'t, O: Output> SerializeTuple<'t, O> {
     pub(crate) fn homogeneous(
         type_id: TypeId,
         ctx: SerializationCtx<Bow<'t, Schema>>,
-        out: Stream<W>,
+        out: O,
     ) -> Result<Self, Error> {
         Ok(SerializeTuple {
             inner: SerializeTupleValue::homogeneous(ctx, type_id)?,
@@ -27,7 +26,7 @@ impl<'t, W: Write> SerializeTuple<'t, W> {
     }
 }
 
-impl<'t, W: Write> ser::SerializeTuple for SerializeTuple<'t, W> {
+impl<'t, O: Output> ser::SerializeTuple for SerializeTuple<'t, O> {
     type Ok = ();
     type Error = Error;
 

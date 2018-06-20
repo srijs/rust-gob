@@ -6,12 +6,14 @@ use serde::ser::{self, Impossible};
 use serde::Serialize;
 use serde_schema::SchemaSerialize;
 
-use internal::gob::Stream;
 use internal::ser::{FieldValueSerializer, SerializationCtx, SerializeVariantValue};
 use internal::utils::Bow;
 
 use error::Error;
 pub use schema::{Schema, TypeId};
+
+mod output;
+pub use self::output::{Output, OutputBuffer, OutputPart, OutputWrite};
 
 mod serialize_struct;
 pub use self::serialize_struct::SerializeStruct;
@@ -25,66 +27,57 @@ mod serialize_struct_variant;
 pub use self::serialize_struct_variant::SerializeStructVariant;
 
 /// Serializes a single value.
-pub struct Serializer<'t, W> {
+pub struct Serializer<'t, O> {
     ctx: SerializationCtx<Bow<'t, Schema>>,
     type_id: TypeId,
-    out: Stream<W>,
-}
-
-impl<'t, W> Serializer<'t, W> {
-    /// Create a new serializer for a value of the specified type,
-    /// with the provided output sink.
-    pub fn new(id: TypeId, out: W) -> Serializer<'t, W> {
-        let ctx = SerializationCtx::with_schema(Bow::Owned(Schema::new()));
-        Serializer::with_context(id, ctx, Stream::new(out))
-    }
-
-    /// Create a new serializer for a value of the specified type,
-    /// with the provided schema and output sink.
-    pub fn with_schema(id: TypeId, schema: &'t mut Schema, out: W) -> Serializer<'t, W> {
-        let ctx = SerializationCtx::with_schema(Bow::Borrowed(schema));
-        Serializer::with_context(id, ctx, Stream::new(out))
-    }
-
-    fn with_context(id: TypeId, ctx: SerializationCtx<Bow<'t, Schema>>, out: Stream<W>) -> Self {
-        Serializer {
-            ctx,
-            type_id: id,
-            out,
-        }
-    }
+    out: O,
 }
 
 /// Serializes a stream of values.
-pub struct StreamSerializer<W> {
+pub struct StreamSerializer<O> {
     schema: Schema,
-    out: Stream<W>,
+    out: O,
 }
 
-impl<W> StreamSerializer<W> {
-    /// Create a new stream serializer with the provided output sink.
-    pub fn new(out: W) -> StreamSerializer<W> {
+impl StreamSerializer<OutputBuffer> {
+    /// Create a new stream serializer that writes into a buffer.
+    pub fn new_with_buffer() -> Self {
+        let buffer = OutputBuffer::new();
+        StreamSerializer::new(buffer)
+    }
+}
+
+impl<W: Write> StreamSerializer<OutputWrite<W>> {
+    /// Create a new stream serializer with the provided `Write` output.
+    pub fn new_with_write(w: W) -> Self {
+        StreamSerializer::new(OutputWrite::new(w))
+    }
+}
+
+impl<O> StreamSerializer<O> {
+    fn new(out: O) -> StreamSerializer<O> {
         let schema = Schema::new();
-        StreamSerializer {
-            schema,
-            out: Stream::new(out),
-        }
+        StreamSerializer { schema, out }
     }
 
     pub fn schema_mut(&mut self) -> &mut Schema {
         &mut self.schema
     }
 
-    pub fn serializer<'a>(&'a mut self, id: TypeId) -> Result<Serializer<'a, &'a mut W>, Error> {
+    pub fn serializer<'a>(&'a mut self, id: TypeId) -> Result<Serializer<'a, &'a mut O>, Error> {
         let ctx = SerializationCtx::with_schema(Bow::Borrowed(&mut self.schema));
-        Ok(Serializer::with_context(id, ctx, self.out.borrow_mut()))
+        Ok(Serializer {
+            type_id: id,
+            ctx,
+            out: &mut self.out,
+        })
     }
 
     /// Serialize a value onto the stream.
     pub fn serialize<T>(&mut self, value: &T) -> Result<(), Error>
     where
         T: SchemaSerialize,
-        W: Write,
+        O: Output,
     {
         let type_id = T::schema_register(&mut self.schema)?;
         self.serialize_with_type_id(type_id, value)
@@ -93,35 +86,35 @@ impl<W> StreamSerializer<W> {
     pub fn serialize_with_type_id<T>(&mut self, type_id: TypeId, value: &T) -> Result<(), Error>
     where
         T: Serialize,
-        W: Write,
+        O: Output,
     {
         value.serialize(self.serializer(type_id)?)
     }
 
-    pub fn get_ref(&self) -> &W {
-        self.out.get_ref()
+    pub fn get_ref(&self) -> &O {
+        &self.out
     }
 
-    pub fn get_mut(&mut self) -> &mut W {
-        self.out.get_mut()
+    pub fn get_mut(&mut self) -> &mut O {
+        &mut self.out
     }
 
-    pub fn into_inner(self) -> W {
-        self.out.into_inner()
+    pub fn into_inner(self) -> O {
+        self.out
     }
 }
 
-impl<'t, W: Write> ser::Serializer for Serializer<'t, W> {
+impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
     type Ok = ();
     type Error = Error;
 
-    type SerializeSeq = SerializeSeq<'t, W>;
-    type SerializeTuple = SerializeTuple<'t, W>;
+    type SerializeSeq = SerializeSeq<'t, O>;
+    type SerializeTuple = SerializeTuple<'t, O>;
     type SerializeTupleStruct = Impossible<Self::Ok, Self::Error>;
     type SerializeTupleVariant = Impossible<Self::Ok, Self::Error>;
-    type SerializeMap = SerializeMap<'t, W>;
-    type SerializeStruct = SerializeStruct<'t, W>;
-    type SerializeStructVariant = SerializeStructVariant<'t, W>;
+    type SerializeMap = SerializeMap<'t, O>;
+    type SerializeStruct = SerializeStruct<'t, O>;
+    type SerializeStructVariant = SerializeStructVariant<'t, O>;
 
     fn serialize_bool(mut self, v: bool) -> Result<Self::Ok, Self::Error> {
         self.ctx.value.write_uint(0);

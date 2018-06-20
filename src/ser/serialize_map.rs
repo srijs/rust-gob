@@ -1,25 +1,24 @@
-use std::io::Write;
-
 use serde::ser::{self, Serialize};
 
 use error::Error;
-use internal::gob::Stream;
 use internal::ser::{SerializationCtx, SerializeMapValue};
 use internal::types::TypeId;
 use internal::utils::Bow;
 use schema::Schema;
 
-pub struct SerializeMap<'t, W> {
+use super::output::Output;
+
+pub struct SerializeMap<'t, O> {
     inner: SerializeMapValue<Bow<'t, Schema>>,
-    out: Stream<W>,
+    out: O,
 }
 
-impl<'t, W: Write> SerializeMap<'t, W> {
+impl<'t, O: Output> SerializeMap<'t, O> {
     pub(crate) fn new(
         len: Option<usize>,
         type_id: TypeId,
         ctx: SerializationCtx<Bow<'t, Schema>>,
-        out: Stream<W>,
+        out: O,
     ) -> Result<Self, Error> {
         Ok(SerializeMap {
             inner: SerializeMapValue::new(ctx, len, type_id)?,
@@ -28,7 +27,7 @@ impl<'t, W: Write> SerializeMap<'t, W> {
     }
 }
 
-impl<'t, W: Write> ser::SerializeMap for SerializeMap<'t, W> {
+impl<'t, O: Output> ser::SerializeMap for SerializeMap<'t, O> {
     type Ok = ();
     type Error = Error;
 

@@ -1,28 +1,27 @@
-use std::io::Write;
-
 use serde::ser::{self, Serialize};
 
 use error::Error;
-use internal::gob::Stream;
 use internal::ser::SerializeStructVariantValue;
 use internal::utils::Bow;
 use schema::Schema;
 
-pub struct SerializeStructVariant<'t, W> {
+use super::output::Output;
+
+pub struct SerializeStructVariant<'t, O> {
     inner: SerializeStructVariantValue<Bow<'t, Schema>>,
-    out: Stream<W>,
+    out: O,
 }
 
-impl<'t, W: Write> SerializeStructVariant<'t, W> {
+impl<'t, O: Output> SerializeStructVariant<'t, O> {
     pub(crate) fn new(
         inner: SerializeStructVariantValue<Bow<'t, Schema>>,
-        out: Stream<W>,
+        out: O,
     ) -> Result<Self, Error> {
         Ok(SerializeStructVariant { inner, out })
     }
 }
 
-impl<'t, W: Write> ser::SerializeStructVariant for SerializeStructVariant<'t, W> {
+impl<'t, O: Output> ser::SerializeStructVariant for SerializeStructVariant<'t, O> {
     type Ok = ();
     type Error = Error;
 
