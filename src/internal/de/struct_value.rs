@@ -16,7 +16,7 @@ where
     def: &'t StructType,
     defs: &'t Types,
     field_no: i64,
-    field_id: Option<TypeId>,
+    field_id: TypeId,
     msg: &'t mut Message<Cursor<&'de [u8]>>,
 }
 
@@ -30,7 +30,7 @@ impl<'t, 'de> StructAccess<'t, 'de> {
             def,
             defs,
             field_no: -1,
-            field_id: None,
+            field_id: TypeId(0),
             msg,
         }
     }
@@ -61,7 +61,7 @@ impl<'t, 'de> MapAccess<'de> for StructAccess<'t, 'de> {
 
         self.field_no += field_delta as i64;
         let field = self.current_field()?;
-        self.field_id = Some(field.id);
+        self.field_id = field.id;
 
         let de = <&str as IntoDeserializer<'_, Error>>::into_deserializer(&field.name);
         let value = seed.deserialize(de)?;
@@ -72,9 +72,7 @@ impl<'t, 'de> MapAccess<'de> for StructAccess<'t, 'de> {
     where
         V: DeserializeSeed<'de>,
     {
-        let field_id = self.field_id
-            .expect("next_key_seed must be called before next_value_seed");
-        let de = FieldValueDeserializer::new(field_id, self.defs, &mut self.msg);
+        let de = FieldValueDeserializer::new(self.field_id, self.defs, &mut self.msg);
         seed.deserialize(de)
     }
 }
