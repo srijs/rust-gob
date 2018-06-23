@@ -140,6 +140,18 @@ impl<W: Write> OutputWrite<W> {
     pub(crate) fn new(w: W) -> Self {
         OutputWrite(w)
     }
+
+    pub fn get_ref(&self) -> &W {
+        &self.0
+    }
+
+    pub fn get_mut(&mut self) -> &mut W {
+        &mut self.0
+    }
+
+    pub fn into_inner(self) -> W {
+        self.0
+    }
 }
 
 impl<W: Write> Output for OutputWrite<W> {

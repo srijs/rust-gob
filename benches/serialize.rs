@@ -67,5 +67,40 @@ fn output_buffer(bench: &mut Bencher) {
     assert_eq!(stream.get_ref().remaining(), 43);
 }
 
-benchmark_group!(benches, output_buffer);
+fn output_write_vec(bench: &mut Bencher) {
+    let rpc_response = RpcResponse {
+        service_method: "Function.Invoke",
+        seq: 1,
+        error: None,
+    };
+    let invoke_response = InvokeResponse {
+        payload: "\"Hello world!\"",
+    };
+
+    let mut stream = StreamSerializer::new_with_write(Vec::new());
+    let type_id_1 = RpcResponse::schema_register(stream.schema_mut()).unwrap();
+    let type_id_2 = InvokeResponse::schema_register(stream.schema_mut()).unwrap();
+    stream
+        .serialize_with_type_id(type_id_1, &rpc_response)
+        .unwrap();
+    stream
+        .serialize_with_type_id(type_id_2, &invoke_response)
+        .unwrap();
+
+    bench.iter(|| {
+        {
+            stream.get_mut().get_mut().truncate(0);
+        }
+        stream
+            .serialize_with_type_id(type_id_1, &rpc_response)
+            .unwrap();
+        stream
+            .serialize_with_type_id(type_id_2, &invoke_response)
+            .unwrap();
+    });
+
+    assert_eq!(stream.get_ref().get_ref().len(), 43);
+}
+
+benchmark_group!(benches, output_buffer, output_write_vec);
 benchmark_main!(benches);
