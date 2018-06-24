@@ -1,5 +1,9 @@
 //! Schema management
 
+use std::ops::Deref;
+use std::sync::Arc;
+
+use owning_ref::{CloneStableAddress, StableAddress};
 use serde::{Deserialize, Deserializer};
 use serde::{Serialize, Serializer};
 use serde_schema::types::Type;
@@ -9,10 +13,30 @@ use internal::ser::SerializeWireTypes;
 use internal::utils::UniqMap;
 use ser::{Output, OutputPart};
 
+#[derive(Clone)]
+pub(crate) enum SchemaType {
+    Builtin(&'static Type<TypeId>),
+    Custom(Arc<Type<TypeId>>),
+}
+
+unsafe impl StableAddress for SchemaType {}
+unsafe impl CloneStableAddress for SchemaType {}
+
+impl Deref for SchemaType {
+    type Target = Type<TypeId>;
+
+    fn deref(&self) -> &Self::Target {
+        match self {
+            SchemaType::Builtin(typ) => typ,
+            SchemaType::Custom(ref typ) => typ,
+        }
+    }
+}
+
 pub struct Schema {
     pending_wire_types: Vec<(TypeId, Vec<u8>)>,
     next_type_id: TypeId,
-    schema_types: UniqMap<TypeId, Type<TypeId>>,
+    schema_types: UniqMap<TypeId, Arc<Type<TypeId>>>,
 }
 
 impl Schema {
@@ -24,8 +48,13 @@ impl Schema {
         }
     }
 
-    pub(crate) fn lookup(&self, id: TypeId) -> Option<&Type<TypeId>> {
-        ::internal::types::lookup_builtin(id).or_else(|| self.schema_types.get(&id))
+    pub(crate) fn lookup(&self, id: TypeId) -> Option<SchemaType> {
+        match ::internal::types::lookup_builtin(id) {
+            Some(typ) => Some(SchemaType::Builtin(typ)),
+            None => self.schema_types
+                .get(&id)
+                .map(|typ| SchemaType::Custom(typ.clone())),
+        }
     }
 
     pub(crate) fn write_pending<O: Output>(&mut self, mut o: O) -> Result<(), Error> {
@@ -47,7 +76,7 @@ impl ::serde_schema::Schema for Schema {
             return Ok(*option_type.inner_type());
         }
 
-        if let Some(id) = self.schema_types.insert(next_id, ty) {
+        if let Some(id) = self.schema_types.insert(next_id, Arc::new(ty)) {
             return Ok(id);
         }
 

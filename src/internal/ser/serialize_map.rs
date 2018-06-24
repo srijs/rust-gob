@@ -24,8 +24,8 @@ impl<S: Borrow<Schema>> SerializeMapValue<S> {
         ser_len: Option<usize>,
         type_id: TypeId,
     ) -> Result<Self, Error> {
-        let (len, key, value) = match ctx.schema.borrow().lookup(type_id) {
-            Some(&Type::Map(ref map_type)) => {
+        let (len, key, value) = if let Some(schema_type) = ctx.schema.borrow().lookup(type_id) {
+            if let &Type::Map(ref map_type) = &*schema_type {
                 if let Some(len) = ser_len {
                     (len, *map_type.key_type(), *map_type.value_type())
                 } else {
@@ -33,10 +33,11 @@ impl<S: Borrow<Schema>> SerializeMapValue<S> {
                         "maps without known length not supported",
                     ));
                 }
-            }
-            _ => {
+            } else {
                 return Err(ser::Error::custom("schema mismatch, not a map"));
             }
+        } else {
+            return Err(ser::Error::custom("type not found"));
         };
 
         Ok(SerializeMapValue {

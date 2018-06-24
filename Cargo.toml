@@ -8,6 +8,7 @@ byteorder = "1.2.2"
 bytes = "0.4.6"
 iovec = "0.1.2"
 lazy_static = "1.0.0"
+owning_ref = "0.3.3"
 serde = "1.0.39"
 serde_derive = "1.0.42"
 serde_schema = { git = "https://github.com/srijs/rust-serde-schema", features = ["bytes"] }

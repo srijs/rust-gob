@@ -1,18 +1,19 @@
 use std::borrow::Borrow;
 
+use owning_ref::OwningRef;
 use serde::ser::{self, Serialize};
 use serde_schema::types::{StructField, Type};
 
 use error::Error;
 use internal::types::TypeId;
-use schema::Schema;
+use schema::{Schema, SchemaType};
 
 use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
 
 pub(crate) struct SerializeStructValue<S> {
     ctx: Option<SerializationCtx<S>>,
     type_id: TypeId,
-    fields: Vec<StructField<TypeId>>,
+    fields: OwningRef<SchemaType, [StructField<TypeId>]>,
     current_field_idx: usize,
     last_serialized_field_idx: i64,
 }
@@ -20,10 +21,16 @@ pub(crate) struct SerializeStructValue<S> {
 impl<S: Borrow<Schema>> SerializeStructValue<S> {
     pub(crate) fn new(ctx: SerializationCtx<S>, type_id: TypeId) -> Result<Self, Error> {
         let fields;
-        if let Some(&Type::Struct(ref struct_type)) = ctx.schema.borrow().lookup(type_id) {
-            fields = struct_type.fields().to_vec();
+        if let Some(schema_type) = ctx.schema.borrow().lookup(type_id) {
+            fields = OwningRef::new(schema_type).try_map::<_, _, Error>(|typ| {
+                if let &Type::Struct(ref struct_type) = typ {
+                    Ok(struct_type.fields())
+                } else {
+                    Err(ser::Error::custom("schema mismatch, not a struct"))
+                }
+            })?;
         } else {
-            return Err(ser::Error::custom("schema mismatch, not a struct"));
+            return Err(ser::Error::custom("type not found"));
         }
         Ok(SerializeStructValue::from_parts(ctx, type_id, fields))
     }
@@ -31,7 +38,7 @@ impl<S: Borrow<Schema>> SerializeStructValue<S> {
     pub(crate) fn from_parts(
         ctx: SerializationCtx<S>,
         type_id: TypeId,
-        fields: Vec<StructField<TypeId>>,
+        fields: OwningRef<SchemaType, [StructField<TypeId>]>,
     ) -> Self {
         SerializeStructValue {
             ctx: Some(ctx),

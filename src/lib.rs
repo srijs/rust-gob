@@ -9,6 +9,7 @@ extern crate bytes;
 extern crate iovec;
 #[macro_use]
 extern crate lazy_static;
+extern crate owning_ref;
 #[macro_use]
 extern crate serde;
 #[macro_use]

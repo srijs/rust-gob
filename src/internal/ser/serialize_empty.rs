@@ -83,7 +83,7 @@ impl<S: Borrow<Schema>> Serialize for SerializeEmptyValue<S> {
             TypeId::STRING => ser.serialize_str(""),
             _ => {
                 if let Some(ty) = self.schema.borrow().lookup(self.type_id) {
-                    self.serialize_with_type(ty, ser)
+                    self.serialize_with_type(&*ty, ser)
                 } else {
                     Err(serde::ser::Error::custom(format!(
                         "empty representation not available for type with id {}",

@@ -23,8 +23,8 @@ impl<S: Borrow<Schema>> SerializeSeqValue<S> {
         ser_len: Option<usize>,
         type_id: TypeId,
     ) -> Result<Self, Error> {
-        let (len, elem) = match ctx.schema.borrow().lookup(type_id) {
-            Some(&Type::Seq(ref seq_type)) => {
+        let (len, elem) = if let Some(schema_type) = ctx.schema.borrow().lookup(type_id) {
+            if let &Type::Seq(ref seq_type) = &*schema_type {
                 if let Some(len) = seq_type.len().or(ser_len) {
                     (len, *seq_type.element_type())
                 } else {
@@ -32,10 +32,11 @@ impl<S: Borrow<Schema>> SerializeSeqValue<S> {
                         "sequences without known length not supported",
                     ));
                 }
-            }
-            _ => {
+            } else {
                 return Err(ser::Error::custom("schema mismatch, not a sequence"));
             }
+        } else {
+            return Err(ser::Error::custom("type not found"));
         };
 
         Ok(SerializeSeqValue {

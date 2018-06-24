@@ -1,11 +1,12 @@
 use std::borrow::Borrow;
 
+use owning_ref::OwningRef;
 use serde::ser::{self, Serialize};
 use serde_schema::types::{EnumVariant, Type};
 
 use error::Error;
 use internal::types::TypeId;
-use schema::Schema;
+use schema::{Schema, SchemaType};
 
 use super::SerializeStructValue;
 use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
@@ -13,7 +14,7 @@ use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
 pub(crate) struct SerializeVariantValue<S> {
     ctx: SerializationCtx<S>,
     type_id: TypeId,
-    variant: EnumVariant<TypeId>,
+    variant: OwningRef<SchemaType, EnumVariant<TypeId>>,
     variant_idx: u32,
 }
 
@@ -23,18 +24,23 @@ impl<S: Borrow<Schema>> SerializeVariantValue<S> {
         type_id: TypeId,
         variant_idx: u32,
     ) -> Result<Self, Error> {
-        let variant = match ctx.schema.borrow().lookup(type_id) {
-            Some(&Type::Enum(ref enum_type)) => {
-                if let Some(variant) = enum_type.variant(variant_idx) {
-                    variant.clone()
+        let variant;
+
+        if let Some(schema_type) = ctx.schema.borrow().lookup(type_id) {
+            variant = OwningRef::new(schema_type).try_map::<_, _, Error>(|typ| {
+                if let &Type::Enum(ref enum_type) = typ {
+                    if let Some(enum_variant) = enum_type.variant(variant_idx) {
+                        Ok(enum_variant)
+                    } else {
+                        Err(ser::Error::custom("unknown enum variant type"))
+                    }
                 } else {
-                    return Err(ser::Error::custom("unknown enum variant type"));
+                    Err(ser::Error::custom("schema mismatch, not an enum"))
                 }
-            }
-            _ => {
-                return Err(ser::Error::custom("schema mismatch, not an enum"));
-            }
-        };
+            })?;
+        } else {
+            return Err(ser::Error::custom("type not found"));
+        }
 
         Ok(SerializeVariantValue {
             ctx,
@@ -87,19 +93,19 @@ impl<S: Borrow<Schema>> SerializeVariantValue<S> {
 
     pub(crate) fn serialize_struct(mut self) -> Result<SerializeStructVariantValue<S>, Error> {
         Self::write_header(&mut self.ctx, self.variant_idx)?;
-        if let Some(struct_variant) = self.variant.as_struct_variant() {
-            Ok(SerializeStructVariantValue {
-                inner: SerializeStructValue::from_parts(
-                    self.ctx,
-                    self.type_id,
-                    struct_variant.fields().to_vec(),
-                ),
-            })
-        } else {
-            Err(ser::Error::custom(
-                "variant type mismatch, expected newtype variant",
-            ))
-        }
+        let struct_variant = self.variant.clone().try_map::<_, _, Error>(|variant| {
+            if let Some(struct_variant) = variant.as_struct_variant() {
+                Ok(struct_variant.fields())
+            } else {
+                Err(ser::Error::custom(
+                    "variant type mismatch, expected newtype variant",
+                ))
+            }
+        })?;
+
+        Ok(SerializeStructVariantValue {
+            inner: SerializeStructValue::from_parts(self.ctx, self.type_id, struct_variant),
+        })
     }
 }
 
