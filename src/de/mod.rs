@@ -18,7 +18,7 @@ pub struct StreamDeserializer<R> {
     defs: Types,
     stream: Stream<R>,
     buffer: Buffer,
-    prev_len: Option<usize>,
+    prev_len: usize,
 }
 
 impl<R> StreamDeserializer<R> {
@@ -27,7 +27,7 @@ impl<R> StreamDeserializer<R> {
             defs: Types::new(),
             stream: Stream::new(read),
             buffer: Buffer::new(),
-            prev_len: None,
+            prev_len: 0,
         }
     }
 
@@ -47,8 +47,9 @@ impl<R> StreamDeserializer<R> {
     where
         R: Read,
     {
-        if let Some(len) = self.prev_len.take() {
-            self.buffer.advance(len);
+        if self.prev_len > 0 {
+            self.buffer.advance(self.prev_len);
+            self.prev_len = 0;
         }
         loop {
             let header = match self.stream.read_section(&mut self.buffer)? {
@@ -59,7 +60,7 @@ impl<R> StreamDeserializer<R> {
             if header.type_id >= 0 {
                 let slice = &self.buffer.bytes()[header.payload_range.clone()];
                 let msg = Message::new(Cursor::new(slice));
-                self.prev_len = Some(header.payload_range.end);
+                self.prev_len = header.payload_range.end;
                 return Ok(Some(Deserializer {
                     defs: Bow::Borrowed(&mut self.defs),
                     msg: msg,
