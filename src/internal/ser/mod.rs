@@ -43,6 +43,25 @@ impl<S> SerializationCtx<S> {
         }
     }
 
+    pub(crate) fn with_borrow<F, E>(&mut self, f: F) -> Result<bool, E>
+    where
+        S: Borrow<Schema>,
+        F: FnOnce(SerializationCtx<&Schema>) -> Result<SerializationOk<&Schema>, E>,
+    {
+        let (is_empty, msg) = {
+            let buf = ::std::mem::replace(self.value.get_mut(), Vec::new());
+            let msg = Message::new(buf);
+            let ctx = SerializationCtx {
+                schema: self.schema.borrow(),
+                value: msg,
+            };
+            let ok = f(ctx)?;
+            (ok.is_empty, ok.ctx.value)
+        };
+        self.value = msg;
+        Ok(is_empty)
+    }
+
     pub(crate) fn flush<O: Output>(&mut self, type_id: TypeId, mut out: O) -> Result<(), Error>
     where
         S: BorrowMut<Schema>,

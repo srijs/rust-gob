@@ -11,7 +11,7 @@ use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
 
 pub(crate) struct SerializeMapValue<S> {
     needs_init: bool,
-    ctx: Option<SerializationCtx<S>>,
+    ctx: SerializationCtx<S>,
     type_id: TypeId,
     len: usize,
     key: TypeId,
@@ -42,7 +42,7 @@ impl<S: Borrow<Schema>> SerializeMapValue<S> {
 
         Ok(SerializeMapValue {
             needs_init: true,
-            ctx: Some(ctx),
+            ctx,
             type_id,
             len,
             key,
@@ -63,17 +63,15 @@ impl<S: Borrow<Schema>> ser::SerializeMap for SerializeMapValue<S> {
     where
         T: Serialize,
     {
-        let mut ctx = self.ctx.take().unwrap();
         if self.needs_init {
-            ctx.value.write_uint(self.len as u64);
+            self.ctx.value.write_uint(self.len as u64);
             self.needs_init = false;
         }
-        let de = FieldValueSerializer {
-            ctx,
-            type_id: self.key,
-        };
-        let ok = key.serialize(de)?;
-        self.ctx = Some(ok.ctx);
+        let type_id = self.key;
+        self.ctx.with_borrow(|ctx| {
+            let de = FieldValueSerializer { ctx, type_id };
+            key.serialize(de)
+        })?;
         Ok(())
     }
 
@@ -81,24 +79,24 @@ impl<S: Borrow<Schema>> ser::SerializeMap for SerializeMapValue<S> {
     where
         T: Serialize,
     {
-        let ctx = self.ctx.take().unwrap();
-        let de = FieldValueSerializer {
-            ctx,
-            type_id: self.value,
-        };
-        let ok = value.serialize(de)?;
-        self.ctx = Some(ok.ctx);
+        let type_id = self.value;
+        self.ctx.with_borrow(|ctx| {
+            let de = FieldValueSerializer { ctx, type_id };
+            value.serialize(de)
+        })?;
         Ok(())
     }
 
     fn end(mut self) -> Result<Self::Ok, Self::Error> {
-        let mut ctx = self.ctx.take().unwrap();
         let is_empty = self.len == 0;
 
         if is_empty {
-            ctx.value.write_uint(0);
+            self.ctx.value.write_uint(0);
         }
 
-        Ok(SerializationOk { ctx, is_empty })
+        Ok(SerializationOk {
+            ctx: self.ctx,
+            is_empty,
+        })
     }
 }

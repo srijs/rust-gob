@@ -11,7 +11,7 @@ use schema::{Schema, SchemaType};
 use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
 
 pub(crate) struct SerializeStructValue<S> {
-    ctx: Option<SerializationCtx<S>>,
+    ctx: SerializationCtx<S>,
     type_id: TypeId,
     fields: OwningRef<SchemaType, [StructField<TypeId>]>,
     current_field_idx: usize,
@@ -41,7 +41,7 @@ impl<S: Borrow<Schema>> SerializeStructValue<S> {
         fields: OwningRef<SchemaType, [StructField<TypeId>]>,
     ) -> Self {
         SerializeStructValue {
-            ctx: Some(ctx),
+            ctx,
             type_id,
             fields,
             current_field_idx: 0,
@@ -66,27 +66,24 @@ impl<S: Borrow<Schema>> ser::SerializeStruct for SerializeStructValue<S> {
     where
         T: Serialize,
     {
-        let mut ctx = self.ctx.take().unwrap();
-        let pre_pos = ctx.value.get_ref().len();
+        let pre_pos = self.ctx.value.get_ref().len();
         let field_delta = self.current_field_idx as i64 - self.last_serialized_field_idx;
-        ctx.value.write_uint(field_delta as u64);
-        let mut ok = {
-            let de = FieldValueSerializer {
-                ctx,
-                type_id: *self.fields[self.current_field_idx].field_type(),
-            };
-            value.serialize(de)?
-        };
+        self.ctx.value.write_uint(field_delta as u64);
 
-        if !ok.is_empty {
+        let type_id = *self.fields[self.current_field_idx].field_type();
+        let is_empty = self.ctx.with_borrow(|ctx| {
+            let de = FieldValueSerializer { ctx, type_id };
+            value.serialize(de)
+        })?;
+
+        if !is_empty {
             self.last_serialized_field_idx = self.current_field_idx as i64;
         } else {
             // reset the buffer to the previous position
-            ok.ctx.value.get_mut().truncate(pre_pos);
+            self.ctx.value.get_mut().truncate(pre_pos);
         }
 
         self.current_field_idx += 1;
-        self.ctx = Some(ok.ctx);
 
         Ok(())
     }
@@ -97,11 +94,10 @@ impl<S: Borrow<Schema>> ser::SerializeStruct for SerializeStructValue<S> {
     }
 
     fn end(mut self) -> Result<Self::Ok, Self::Error> {
-        let mut ctx = self.ctx.take().unwrap();
-        ctx.value.write_uint(0);
+        self.ctx.value.write_uint(0);
 
         Ok(SerializationOk {
-            ctx,
+            ctx: self.ctx,
             is_empty: false,
         })
     }

@@ -11,7 +11,7 @@ use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
 
 pub(crate) struct SerializeSeqValue<S> {
     needs_init: bool,
-    ctx: Option<SerializationCtx<S>>,
+    ctx: SerializationCtx<S>,
     type_id: TypeId,
     len: usize,
     elem: TypeId,
@@ -41,7 +41,7 @@ impl<S: Borrow<Schema>> SerializeSeqValue<S> {
 
         Ok(SerializeSeqValue {
             needs_init: true,
-            ctx: Some(ctx),
+            ctx,
             type_id,
             len,
             elem,
@@ -61,28 +61,28 @@ impl<S: Borrow<Schema>> ser::SerializeSeq for SerializeSeqValue<S> {
     where
         T: Serialize,
     {
-        let mut ctx = self.ctx.take().unwrap();
         if self.needs_init {
-            ctx.value.write_uint(self.len as u64);
+            self.ctx.value.write_uint(self.len as u64);
             self.needs_init = false;
         }
-        let de = FieldValueSerializer {
-            ctx,
-            type_id: self.elem,
-        };
-        let ok = value.serialize(de)?;
-        self.ctx = Some(ok.ctx);
+        let type_id = self.elem;
+        self.ctx.with_borrow(|ctx| {
+            let de = FieldValueSerializer { ctx, type_id };
+            value.serialize(de)
+        })?;
         Ok(())
     }
 
     fn end(mut self) -> Result<Self::Ok, Self::Error> {
-        let mut ctx = self.ctx.take().unwrap();
         let is_empty = self.len == 0;
 
         if is_empty {
-            ctx.value.write_uint(0);
+            self.ctx.value.write_uint(0);
         }
 
-        Ok(SerializationOk { ctx, is_empty })
+        Ok(SerializationOk {
+            ctx: self.ctx,
+            is_empty,
+        })
     }
 }
