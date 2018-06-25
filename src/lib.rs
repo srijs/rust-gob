@@ -1,6 +1,8 @@
 #![deny(warnings)]
 
 #[cfg(test)]
+extern crate partial_io;
+#[cfg(test)]
 #[macro_use]
 extern crate quickcheck;
 

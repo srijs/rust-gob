@@ -163,10 +163,14 @@ impl<W: Write> Output for OutputWrite<W> {
 
 #[cfg(test)]
 mod tests {
+    use std::io::Read;
     use std::ops::Deref;
 
     use bytes::Buf;
     use iovec::IoVec;
+    use partial_io::{GenNoErrors, PartialRead, PartialWithErrors};
+
+    use internal::gob::Message;
 
     use super::OutputPart;
 
@@ -174,6 +178,26 @@ mod tests {
     fn part_collect() {
         let part = OutputPart::new(42, vec![1, 2, 3, 4, 5, 6]);
         assert_eq!(part.collect::<Vec<_>>(), vec![7, 84, 1, 2, 3, 4, 5, 6])
+    }
+
+    quickcheck! {
+        fn part_bytes(tag: i64, buf: Vec<u8>, ops: PartialWithErrors<GenNoErrors>) -> bool {
+            let mut tag_msg = Message::new(Vec::new());
+            tag_msg.write_int(tag);
+
+            let mut ref_msg = Message::new(Vec::new());
+            ref_msg.write_uint((tag_msg.get_ref().len() + buf.len()) as u64);
+            ref_msg.write_int(tag);
+            ref_msg.get_mut().extend_from_slice(&buf);
+
+            let part = OutputPart::new(tag, buf);
+            let reader = part.reader();
+            let mut partial_reader = PartialRead::new(reader, ops);
+            let mut part_vec = Vec::new();
+            partial_reader.read_to_end(&mut part_vec).unwrap();
+
+            part_vec == *ref_msg.get_ref()
+        }
     }
 
     #[test]
