@@ -13,7 +13,6 @@ serde = "1.0.39"
 serde_derive = "1.0.42"
 serde_schema = { git = "https://github.com/srijs/rust-serde-schema", features = ["bytes"] }
 serde_schema_derive = { git = "https://github.com/srijs/rust-serde-schema" }
-smallvec = "0.6.1"
 
 [dev-dependencies]
 bencher = "0.1.5"

@@ -1,5 +1,6 @@
 //! Schema management
 
+use std::collections::BTreeMap;
 use std::ops::Deref;
 use std::sync::Arc;
 
@@ -10,7 +11,6 @@ use serde_schema::types::Type;
 
 use error::Error;
 use internal::ser::SerializeWireTypes;
-use internal::utils::UniqMap;
 use ser::{Output, OutputPart};
 
 #[derive(Clone)]
@@ -33,27 +33,36 @@ impl Deref for SchemaType {
     }
 }
 
+const CUSTOM_TYPE_ID_OFFSET: i64 = 65;
+
 pub struct Schema {
     pending_wire_types: Vec<(TypeId, Vec<u8>)>,
     next_type_id: TypeId,
-    schema_types: UniqMap<TypeId, Arc<Type<TypeId>>>,
+    schema_types: Vec<(TypeId, Arc<Type<TypeId>>)>,
+    schema_types_reverse: BTreeMap<Arc<Type<TypeId>>, TypeId>,
 }
 
 impl Schema {
     pub fn new() -> Schema {
         Schema {
             pending_wire_types: Vec::new(),
-            next_type_id: TypeId(65),
-            schema_types: UniqMap::new(),
+            next_type_id: TypeId(CUSTOM_TYPE_ID_OFFSET),
+            schema_types: Vec::new(),
+            schema_types_reverse: BTreeMap::new(),
         }
     }
 
+    #[inline]
     pub(crate) fn lookup(&self, id: TypeId) -> Option<SchemaType> {
-        match ::internal::types::lookup_builtin(id) {
-            Some(typ) => Some(SchemaType::Builtin(typ)),
-            None => self.schema_types
-                .get(&id)
-                .map(|typ| SchemaType::Custom(typ.clone())),
+        if id.0 < CUSTOM_TYPE_ID_OFFSET {
+            ::internal::types::lookup_builtin(id).map(SchemaType::Builtin)
+        } else {
+            match self.schema_types
+                .binary_search_by(|(probe_id, _)| probe_id.cmp(&id))
+            {
+                Ok(pos) => Some(SchemaType::Custom(self.schema_types[pos].1.clone())),
+                Err(_) => None,
+            }
         }
     }
 
@@ -76,12 +85,17 @@ impl ::serde_schema::Schema for Schema {
             return Ok(*option_type.inner_type());
         }
 
-        if let Some(id) = self.schema_types.insert(next_id, Arc::new(ty)) {
-            return Ok(id);
+        let arc_ty = Arc::new(ty);
+
+        if let Some(id) = self.schema_types_reverse.get(&arc_ty) {
+            return Ok(*id);
         }
 
+        self.schema_types.push((next_id, arc_ty.clone()));
+        self.schema_types_reverse.insert(arc_ty.clone(), next_id);
+
         let delta = SerializeWireTypes::new(&mut self.pending_wire_types)
-            .serialize_wire_types(next_id, self.schema_types.get(&next_id).unwrap())?;
+            .serialize_wire_types(next_id, &arc_ty)?;
 
         self.next_type_id = TypeId((self.next_type_id.0 as usize + delta) as i64);
 
