@@ -17,12 +17,6 @@ impl<S: Borrow<Schema>> SerializeTupleValue<S> {
         let inner = SerializeSeqValue::new(ctx, None, type_id)?;
         Ok(SerializeTupleValue::Homogeneous(inner))
     }
-
-    pub(crate) fn type_id(&self) -> TypeId {
-        match self {
-            &SerializeTupleValue::Homogeneous(ref inner) => inner.type_id(),
-        }
-    }
 }
 
 impl<S: Borrow<Schema>> ser::SerializeTuple for SerializeTupleValue<S> {

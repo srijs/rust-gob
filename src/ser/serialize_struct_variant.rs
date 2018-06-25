@@ -37,8 +37,7 @@ impl<'t, O: Output> ser::SerializeStructVariant for SerializeStructVariant<'t, O
     }
 
     fn end(self) -> Result<Self::Ok, Self::Error> {
-        let type_id = self.inner.type_id();
         let mut ok = self.inner.end()?;
-        ok.ctx.flush(type_id, self.out)
+        ok.ctx.flush(self.out)
     }
 }

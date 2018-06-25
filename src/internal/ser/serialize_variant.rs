@@ -13,7 +13,6 @@ use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
 
 pub(crate) struct SerializeVariantValue<S> {
     ctx: SerializationCtx<S>,
-    type_id: TypeId,
     variant: OwningRef<SchemaType, EnumVariant<TypeId>>,
     variant_idx: u32,
 }
@@ -44,7 +43,6 @@ impl<S: Borrow<Schema>> SerializeVariantValue<S> {
 
         Ok(SerializeVariantValue {
             ctx,
-            type_id,
             variant,
             variant_idx,
         })
@@ -104,19 +102,13 @@ impl<S: Borrow<Schema>> SerializeVariantValue<S> {
         })?;
 
         Ok(SerializeStructVariantValue {
-            inner: SerializeStructValue::from_parts(self.ctx, self.type_id, struct_variant),
+            inner: SerializeStructValue::from_parts(self.ctx, struct_variant),
         })
     }
 }
 
 pub(crate) struct SerializeStructVariantValue<S> {
     inner: SerializeStructValue<S>,
-}
-
-impl<S: Borrow<Schema>> SerializeStructVariantValue<S> {
-    pub(crate) fn type_id(&self) -> TypeId {
-        self.inner.type_id()
-    }
 }
 
 impl<S: Borrow<Schema>> ser::SerializeStructVariant for SerializeStructVariantValue<S> {

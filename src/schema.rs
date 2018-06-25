@@ -36,7 +36,7 @@ impl Deref for SchemaType {
 const CUSTOM_TYPE_ID_OFFSET: i64 = 65;
 
 pub struct Schema {
-    pending_wire_types: Vec<(TypeId, Vec<u8>)>,
+    pending_wire_types: Vec<Vec<u8>>,
     next_type_id: TypeId,
     schema_types: Vec<(TypeId, Arc<Type<TypeId>>)>,
     schema_types_reverse: BTreeMap<Arc<Type<TypeId>>, TypeId>,
@@ -67,8 +67,8 @@ impl Schema {
     }
 
     pub(crate) fn write_pending<O: Output>(&mut self, mut o: O) -> Result<(), Error> {
-        for (type_id, wire_type_buffer) in self.pending_wire_types.drain(..) {
-            o.serialize_part(OutputPart::new(-type_id.0, wire_type_buffer))?;
+        for wire_type_buffer in self.pending_wire_types.drain(..) {
+            o.serialize_part(OutputPart::new(wire_type_buffer))?;
         }
         Ok(())
     }

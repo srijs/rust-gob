@@ -62,13 +62,13 @@ impl<S> SerializationCtx<S> {
         Ok(is_empty)
     }
 
-    pub(crate) fn flush<O: Output>(&mut self, type_id: TypeId, mut out: O) -> Result<(), Error>
+    pub(crate) fn flush<O: Output>(&mut self, mut out: O) -> Result<(), Error>
     where
         S: BorrowMut<Schema>,
     {
         self.schema.borrow_mut().write_pending(&mut out)?;
         let buffer = ::std::mem::replace(self.value.get_mut(), Vec::new());
-        out.serialize_part(OutputPart::new(type_id.0, buffer))
+        out.serialize_part(OutputPart::new(buffer))
     }
 }
 

@@ -9,11 +9,11 @@ use super::{FieldValueSerializer, SerializationCtx};
 
 pub(crate) struct SerializeWireTypes<'a> {
     len_pre: usize,
-    wire_types: &'a mut Vec<(TypeId, Vec<u8>)>,
+    wire_types: &'a mut Vec<Vec<u8>>,
 }
 
 impl<'a> SerializeWireTypes<'a> {
-    pub fn new(wire_types: &'a mut Vec<(TypeId, Vec<u8>)>) -> Self {
+    pub fn new(wire_types: &'a mut Vec<Vec<u8>>) -> Self {
         SerializeWireTypes {
             len_pre: wire_types.len(),
             wire_types,
@@ -27,7 +27,8 @@ impl<'a> SerializeWireTypes<'a> {
     }
 
     fn serialize_main_type(&mut self, id: TypeId, ty: &Type<TypeId>) -> Result<(), Error> {
-        let ctx = SerializationCtx::with_schema(Schema::new());
+        let mut ctx = SerializationCtx::with_schema(Schema::new());
+        ctx.value.write_int(-id.0);
         let ser = FieldValueSerializer {
             ctx,
             type_id: TypeId::WIRE_TYPE,
@@ -91,7 +92,7 @@ impl<'a> SerializeWireTypes<'a> {
                 return Err(::serde::de::Error::custom("unsupported type"));
             }
         };
-        self.wire_types.push((id, ok.ctx.value.into_inner()));
+        self.wire_types.push(ok.ctx.value.into_inner());
         Ok(())
     }
 
@@ -103,7 +104,8 @@ impl<'a> SerializeWireTypes<'a> {
         if let &Type::Enum(ref enum_type) = ty {
             for variant in enum_type.variants() {
                 if let Some(struct_variant) = variant.as_struct_variant() {
-                    let ctx = SerializationCtx::with_schema(Schema::new());
+                    let mut ctx = SerializationCtx::with_schema(Schema::new());
+                    ctx.value.write_int(-next_id.0);
                     let ok = {
                         let mut ser = FieldValueSerializer {
                             ctx,
@@ -120,7 +122,7 @@ impl<'a> SerializeWireTypes<'a> {
                             },
                         )?
                     };
-                    self.wire_types.push((next_id, ok.ctx.value.into_inner()));
+                    self.wire_types.push(ok.ctx.value.into_inner());
                     next_id = next_id.next();
                 }
             }

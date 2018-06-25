@@ -117,6 +117,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
     type SerializeStructVariant = SerializeStructVariant<'t, O>;
 
     fn serialize_bool(mut self, v: bool) -> Result<Self::Ok, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
@@ -125,7 +126,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
             };
             ser.serialize_bool(v)?
         };
-        ok.ctx.flush(self.type_id, self.out)
+        ok.ctx.flush(self.out)
     }
 
     fn serialize_i8(self, v: i8) -> Result<Self::Ok, Self::Error> {
@@ -141,6 +142,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
     }
 
     fn serialize_i64(mut self, v: i64) -> Result<Self::Ok, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
@@ -149,7 +151,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
             };
             ser.serialize_i64(v)?
         };
-        ok.ctx.flush(self.type_id, self.out)
+        ok.ctx.flush(self.out)
     }
 
     fn serialize_u8(self, v: u8) -> Result<Self::Ok, Self::Error> {
@@ -165,6 +167,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
     }
 
     fn serialize_u64(mut self, v: u64) -> Result<Self::Ok, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
@@ -173,7 +176,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
             };
             ser.serialize_u64(v)?
         };
-        ok.ctx.flush(self.type_id, self.out)
+        ok.ctx.flush(self.out)
     }
 
     fn serialize_f32(self, v: f32) -> Result<Self::Ok, Self::Error> {
@@ -181,6 +184,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
     }
 
     fn serialize_f64(mut self, v: f64) -> Result<Self::Ok, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
@@ -189,7 +193,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
             };
             ser.serialize_f64(v)?
         };
-        ok.ctx.flush(self.type_id, self.out)
+        ok.ctx.flush(self.out)
     }
 
     fn serialize_char(self, v: char) -> Result<Self::Ok, Self::Error> {
@@ -197,6 +201,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
     }
 
     fn serialize_str(mut self, v: &str) -> Result<Self::Ok, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
@@ -205,10 +210,11 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
             };
             ser.serialize_str(v)?
         };
-        ok.ctx.flush(self.type_id, self.out)
+        ok.ctx.flush(self.out)
     }
 
     fn serialize_bytes(mut self, v: &[u8]) -> Result<Self::Ok, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
@@ -217,10 +223,11 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
             };
             ser.serialize_bytes(v)?
         };
-        ok.ctx.flush(self.type_id, self.out)
+        ok.ctx.flush(self.out)
     }
 
     fn serialize_none(mut self) -> Result<Self::Ok, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         self.ctx.value.write_uint(0);
         let mut ok = {
             let ser = FieldValueSerializer {
@@ -229,7 +236,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
             };
             ser.serialize_none()?
         };
-        ok.ctx.flush(self.type_id, self.out)
+        ok.ctx.flush(self.out)
     }
 
     fn serialize_some<T: ?Sized>(self, value: &T) -> Result<Self::Ok, Self::Error>
@@ -268,7 +275,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
     }
 
     fn serialize_newtype_variant<T: ?Sized>(
-        self,
+        mut self,
         name: &'static str,
         variant_index: u32,
         variant: &'static str,
@@ -277,6 +284,7 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
     where
         T: Serialize,
     {
+        self.ctx.value.write_int(self.type_id.0);
         let mut ok = {
             let ser = FieldValueSerializer {
                 ctx: self.ctx,
@@ -284,15 +292,17 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
             };
             ser.serialize_newtype_variant(name, variant_index, variant, value)?
         };
-        ok.ctx.flush(self.type_id, self.out)
+        ok.ctx.flush(self.out)
     }
 
     fn serialize_seq(mut self, len: Option<usize>) -> Result<Self::SerializeSeq, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         self.ctx.value.write_uint(0);
         SerializeSeq::new(len, self.type_id, self.ctx, self.out)
     }
 
     fn serialize_tuple(mut self, _len: usize) -> Result<Self::SerializeTuple, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         self.ctx.value.write_uint(0);
         SerializeTuple::homogeneous(self.type_id, self.ctx, self.out)
     }
@@ -316,25 +326,28 @@ impl<'t, O: Output> ser::Serializer for Serializer<'t, O> {
     }
 
     fn serialize_map(mut self, len: Option<usize>) -> Result<Self::SerializeMap, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         self.ctx.value.write_uint(0);
         SerializeMap::new(len, self.type_id, self.ctx, self.out)
     }
 
     fn serialize_struct(
-        self,
+        mut self,
         _name: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStruct, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         Ok(SerializeStruct::new(self.type_id, self.ctx, self.out)?)
     }
 
     fn serialize_struct_variant(
-        self,
+        mut self,
         _name: &'static str,
         variant_index: u32,
         _variant: &'static str,
         _len: usize,
     ) -> Result<Self::SerializeStructVariant, Self::Error> {
+        self.ctx.value.write_int(self.type_id.0);
         let inner =
             SerializeVariantValue::new(self.ctx, self.type_id, variant_index)?.serialize_struct()?;
         SerializeStructVariant::new(inner, self.out)

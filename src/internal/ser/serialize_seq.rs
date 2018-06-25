@@ -12,7 +12,6 @@ use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
 pub(crate) struct SerializeSeqValue<S> {
     needs_init: bool,
     ctx: SerializationCtx<S>,
-    type_id: TypeId,
     len: usize,
     elem: TypeId,
 }
@@ -42,14 +41,9 @@ impl<S: Borrow<Schema>> SerializeSeqValue<S> {
         Ok(SerializeSeqValue {
             needs_init: true,
             ctx,
-            type_id,
             len,
             elem,
         })
-    }
-
-    pub(crate) fn type_id(&self) -> TypeId {
-        self.type_id
     }
 }
 

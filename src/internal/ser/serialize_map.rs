@@ -12,7 +12,6 @@ use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
 pub(crate) struct SerializeMapValue<S> {
     needs_init: bool,
     ctx: SerializationCtx<S>,
-    type_id: TypeId,
     len: usize,
     key: TypeId,
     value: TypeId,
@@ -43,15 +42,10 @@ impl<S: Borrow<Schema>> SerializeMapValue<S> {
         Ok(SerializeMapValue {
             needs_init: true,
             ctx,
-            type_id,
             len,
             key,
             value,
         })
-    }
-
-    pub(crate) fn type_id(&self) -> TypeId {
-        self.type_id
     }
 }
 

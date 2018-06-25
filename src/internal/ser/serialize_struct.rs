@@ -12,7 +12,6 @@ use super::{FieldValueSerializer, SerializationCtx, SerializationOk};
 
 pub(crate) struct SerializeStructValue<S> {
     ctx: SerializationCtx<S>,
-    type_id: TypeId,
     fields: OwningRef<SchemaType, [StructField<TypeId>]>,
     current_field_idx: usize,
     last_serialized_field_idx: i64,
@@ -32,25 +31,19 @@ impl<S: Borrow<Schema>> SerializeStructValue<S> {
         } else {
             return Err(ser::Error::custom("type not found"));
         }
-        Ok(SerializeStructValue::from_parts(ctx, type_id, fields))
+        Ok(SerializeStructValue::from_parts(ctx, fields))
     }
 
     pub(crate) fn from_parts(
         ctx: SerializationCtx<S>,
-        type_id: TypeId,
         fields: OwningRef<SchemaType, [StructField<TypeId>]>,
     ) -> Self {
         SerializeStructValue {
             ctx,
-            type_id,
             fields,
             current_field_idx: 0,
             last_serialized_field_idx: -1,
         }
-    }
-
-    pub(crate) fn type_id(&self) -> TypeId {
-        self.type_id
     }
 }
 
