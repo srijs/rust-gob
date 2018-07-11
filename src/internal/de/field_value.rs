@@ -45,6 +45,18 @@ impl<'t, 'de> FieldValueDeserializer<'t, 'de> {
     }
 }
 
+macro_rules! primitive {
+    ($fname:tt, $tname:tt, $visit:tt, $id:tt, $parse:expr) => {
+        fn $fname<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
+            if self.type_id == TypeId::$id {
+                visitor.$visit($parse(self)? as $tname)
+            } else {
+                Err(serde::de::Error::custom(format!("expected {}", stringify!($tname))))
+            }
+        }
+    }
+}
+
 impl<'t, 'de> serde::Deserializer<'de> for FieldValueDeserializer<'t, 'de> {
     type Error = Error;
 
@@ -100,6 +112,56 @@ impl<'t, 'de> serde::Deserializer<'de> for FieldValueDeserializer<'t, 'de> {
         }
     }
 
+    primitive!(deserialize_bool, bool, visit_bool, BOOL, |d: Self| d.msg
+        .read_bool());
+
+    primitive!(deserialize_i8, i8, visit_i8, INT, |d: Self| d.msg
+        .read_int());
+    primitive!(deserialize_i16, i16, visit_i16, INT, |d: Self| d.msg
+        .read_int());
+    primitive!(deserialize_i32, i32, visit_i32, INT, |d: Self| d.msg
+        .read_int());
+    primitive!(deserialize_i64, i64, visit_i64, INT, |d: Self| d.msg
+        .read_int());
+
+    primitive!(deserialize_u8, u8, visit_u8, UINT, |d: Self| d.msg
+        .read_uint());
+    primitive!(deserialize_u16, u16, visit_u16, UINT, |d: Self| d.msg
+        .read_uint());
+    primitive!(deserialize_u32, u32, visit_u32, UINT, |d: Self| d.msg
+        .read_uint());
+    primitive!(deserialize_u64, u64, visit_u64, UINT, |d: Self| d.msg
+        .read_uint());
+
+    primitive!(deserialize_f32, f32, visit_f32, FLOAT, |d: Self| d.msg
+        .read_float());
+    primitive!(deserialize_f64, f64, visit_f64, FLOAT, |d: Self| d.msg
+        .read_float());
+
+    fn deserialize_str<V: Visitor<'de>>(mut self, visitor: V) -> Result<V::Value, Self::Error> {
+        if self.type_id == TypeId::STRING {
+            visitor.visit_borrowed_str(self.deserialize_str_slice()?)
+        } else {
+            Err(serde::de::Error::custom("expected str"))
+        }
+    }
+
+    fn deserialize_string<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
+        self.deserialize_str(visitor)
+    }
+
+    fn deserialize_bytes<V: Visitor<'de>>(mut self, visitor: V) -> Result<V::Value, Self::Error> {
+        if self.type_id == TypeId::BYTES {
+            visitor.visit_borrowed_bytes(self.deserialize_byte_slice()?)
+        } else {
+            Err(serde::de::Error::custom("expected bytes"))
+        }
+    }
+
+    fn deserialize_byte_buf<V: Visitor<'de>>(self, visitor: V) -> Result<V::Value, Self::Error> {
+        self.deserialize_bytes(visitor)
+    }
+
     fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
@@ -134,6 +196,24 @@ impl<'t, 'de> serde::Deserializer<'de> for FieldValueDeserializer<'t, 'de> {
     }
 
     #[inline]
+    fn deserialize_struct<V>(
+        self,
+        name: &'static str,
+        fields: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        if let Some(&WireType::Struct(ref struct_type)) = self.defs.lookup(self.type_id) {
+            let de = StructValueDeserializer::new(struct_type, self.defs, self.msg);
+            de.deserialize_struct(name, fields, visitor)
+        } else {
+            Err(serde::de::Error::custom("not a struct type"))
+        }
+    }
+
+    #[inline]
     fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
@@ -143,8 +223,7 @@ impl<'t, 'de> serde::Deserializer<'de> for FieldValueDeserializer<'t, 'de> {
     }
 
     forward_to_deserialize_any! {
-        bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 str string bytes
-        byte_buf option unit_struct newtype_struct seq tuple
-        tuple_struct map struct identifier ignored_any
+        option unit_struct newtype_struct seq tuple
+        tuple_struct map identifier ignored_any
     }
 }

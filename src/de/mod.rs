@@ -166,6 +166,19 @@ impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
             .deserialize_enum(name, variants, visitor)
     }
 
+    fn deserialize_struct<V>(
+        mut self,
+        name: &'static str,
+        fields: &'static [&'static str],
+        visitor: V,
+    ) -> Result<V::Value, Self::Error>
+    where
+        V: Visitor<'de>,
+    {
+        self.value_deserializer()?
+            .deserialize_struct(name, fields, visitor)
+    }
+
     fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
     where
         V: Visitor<'de>,
@@ -193,6 +206,6 @@ impl<'de> serde::Deserializer<'de> for Deserializer<'de> {
     forward_to_deserialize_any! {
         bool i8 i16 i32 i64 u8 u16 u32 u64 f32 f64 str string bytes
         byte_buf option unit_struct newtype_struct seq tuple
-        tuple_struct map struct identifier ignored_any
+        tuple_struct map identifier ignored_any
     }
 }
