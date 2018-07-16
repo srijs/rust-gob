@@ -1,6 +1,7 @@
 use std::io::{Read, Result as IoResult};
 
 use bytes::Buf;
+use safemem::copy_over;
 
 pub struct Buffer {
     bytes: Vec<u8>,
@@ -23,22 +24,22 @@ impl Buffer {
         &self.bytes.as_slice()[self.offset..]
     }
 
-    fn trim(&mut self) {
+    fn make_space(&mut self) {
         let off = self.offset;
         if off > 0 {
             let len = self.bytes.len();
-            unsafe {
-                let src = self.bytes.as_ptr().offset(off as isize);
-                let dst = self.bytes.as_mut_ptr();
-                ::std::ptr::copy(src, dst, len - off);
-                self.bytes.set_len(len - off);
+            debug_assert!(len >= off);
+            if len > off {
+                // copy remaining bytes to the beginning of the buffer
+                copy_over(self.bytes.as_mut_slice(), off, 0, len - off);
             }
+            self.bytes.truncate(len - off);
             self.offset = 0;
         }
     }
 
     pub fn read_from<R: Read>(&mut self, r: &mut R) -> IoResult<usize> {
-        self.trim();
+        self.make_space();
         let pre_len = self.bytes.len();
         self.bytes.resize(pre_len + 4096, 0);
         match r.read(&mut self.bytes.as_mut_slice()[pre_len..]) {

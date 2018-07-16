@@ -12,6 +12,7 @@ extern crate iovec;
 #[macro_use]
 extern crate lazy_static;
 extern crate owning_ref;
+extern crate safemem;
 #[macro_use]
 extern crate serde;
 #[macro_use]
