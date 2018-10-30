@@ -2,6 +2,11 @@
 name = "gob"
 version = "0.1.0"
 authors = ["Sam Rijs <srijs@airpost.net>"]
+description = "serde support for the gob binary format"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/srijs/rust-gob"
+documentation = "https://docs.rs/gob"
 
 [dependencies]
 byteorder = "1.2.2"
@@ -12,8 +17,8 @@ owning_ref = "0.3.3"
 safemem = "0.3.0"
 serde = "1.0.39"
 serde_derive = "1.0.42"
-serde_schema = { git = "https://github.com/srijs/rust-serde-schema", features = ["bytes"] }
-serde_schema_derive = { git = "https://github.com/srijs/rust-serde-schema" }
+serde_schema = "0.0.1"
+serde_schema_derive = "0.0.1"
 
 [dev-dependencies]
 bencher = "0.1.5"
