@@ -17,7 +17,7 @@ owning_ref = "0.3.3"
 safemem = "0.3.0"
 serde = "1.0.39"
 serde_derive = "1.0.42"
-serde_schema = "0.0.1"
+serde_schema = { version = "0.0.1", features = ["bytes"] }
 serde_schema_derive = "0.0.1"
 
 [dev-dependencies]
